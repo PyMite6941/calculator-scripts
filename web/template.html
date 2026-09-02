@@ -1,0 +1,650 @@
+<title>TI-84 Bench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  /* Neutrals carry a slate-blue bias, taken from the calculator's own
+     graphite shell rather than a stock grey ramp. */
+  --ground: #E7E9ED;
+  --panel: #FFFFFF;
+  --panel-2: #F1F3F6;
+  --line: #D2D7DF;
+  --text: #1B1F27;
+  --muted: #5C6473;
+  --faint: #8C94A3;
+
+  /* The chassis and the LCD are physical objects. They look the same
+     under either theme, the way the calculator on your desk does. */
+  --chassis: #24272F;
+  --chassis-2: #171A20;
+  --lcd: #F3F2EC;
+  --lcd-grid: #E2E1D8;
+  --ink: #15171B;
+
+  --accent: #C93B2B;
+  --accent-soft: #F4DEDA;
+  --signal: #B47C1F;
+  --signal-soft: #F6EBD5;
+  --ok: #327468;
+  --ok-soft: #DCEAE6;
+
+  --radius: 4px;
+  --gap: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14161B;
+    --panel: #1C1F26;
+    --panel-2: #23272F;
+    --line: #333846;
+    --text: #E4E7ED;
+    --muted: #99A1B0;
+    --faint: #6D7583;
+    --accent: #E56A57;
+    --accent-soft: #3A2320;
+    --signal: #D7A245;
+    --signal-soft: #372B18;
+    --ok: #64B0A1;
+    --ok-soft: #1B322E;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14161B;
+  --panel: #1C1F26;
+  --panel-2: #23272F;
+  --line: #333846;
+  --text: #E4E7ED;
+  --muted: #99A1B0;
+  --faint: #6D7583;
+  --accent: #E56A57;
+  --accent-soft: #3A2320;
+  --signal: #D7A245;
+  --signal-soft: #372B18;
+  --ok: #64B0A1;
+  --ok-soft: #1B322E;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: Saira, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+.masthead {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.masthead h1 {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+}
+.masthead .mark {
+  width: 10px; height: 20px; border-radius: 2px;
+  background: var(--accent); flex: none;
+}
+.masthead p { margin: 0; color: var(--muted); font-size: 13px; max-width: 62ch; }
+
+.wrap {
+  display: grid; gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  align-items: start;
+  padding: var(--gap) 24px 48px;
+  max-width: 1180px; margin: 0 auto;
+}
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+}
+.card > header h2 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- program picker ---- */
+.picker { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 14px; }
+.chip {
+  font: 600 12px/1 Saira, sans-serif; letter-spacing: 0.04em;
+  padding: 7px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.chip:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+textarea#source {
+  display: block; width: 100%; min-height: 380px; resize: vertical;
+  border: 0; border-top: 1px solid var(--line);
+  padding: 14px;
+  background: var(--panel); color: var(--text);
+  font: 400 12.5px/1.65 "IBM Plex Mono", ui-monospace, monospace;
+  tab-size: 2;
+}
+
+/* ---- the device ---- */
+.device {
+  background: linear-gradient(180deg, var(--chassis) 0%, var(--chassis-2) 100%);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lcd-frame {
+  background: var(--lcd);
+  border-radius: 3px;
+  padding: 10px 11px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.06);
+  overflow-x: auto;
+}
+pre.lcd {
+  margin: 0; color: var(--ink);
+  font: 500 13px/1.42 "IBM Plex Mono", ui-monospace, monospace;
+  white-space: pre;
+  /* Faint row banding, the way an LCD's pixel grid reads up close. */
+  background-image: repeating-linear-gradient(
+    180deg, transparent 0 17px, var(--lcd-grid) 17px 18.46px);
+}
+.ruler {
+  margin: 6px 0 0; color: #9A9A8E;
+  font: 400 10px/1 "IBM Plex Mono", monospace; white-space: pre;
+}
+.device .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge {
+  font: 600 10px/1 Saira, sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 8px; border-radius: 3px;
+  background: rgba(255,255,255,.08); color: #C8CCD4;
+}
+
+/* ---- controls ---- */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
+button.btn {
+  font: 600 13px/1 Saira, sans-serif;
+  padding: 9px 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  cursor: pointer;
+}
+button.btn:hover:not(:disabled) { border-color: var(--accent); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---- the prompt row: the calculator asking you for something ---- */
+.ask { padding: 0 14px 14px; display: none; }
+.ask.on { display: block; }
+.ask label {
+  display: block; font: 600 11px/1 Saira, sans-serif;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 7px;
+}
+.ask .row { display: flex; gap: 8px; }
+.ask input {
+  flex: 1; min-width: 0;
+  padding: 9px 11px; border-radius: var(--radius);
+  border: 1px solid var(--accent); background: var(--panel-2); color: var(--text);
+  font: 500 14px/1 "IBM Plex Mono", monospace;
+}
+.menu-opts { display: flex; flex-direction: column; gap: 6px; }
+.menu-opts button {
+  display: flex; gap: 10px; align-items: baseline; text-align: left;
+  font: 500 13px/1.3 "IBM Plex Mono", monospace;
+  padding: 9px 11px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  cursor: pointer;
+}
+.menu-opts button:hover { border-color: var(--accent); }
+.menu-opts b { color: var(--accent); font-weight: 600; }
+
+/* ---- readout ---- */
+.readout { padding: 12px 14px; display: grid; gap: 10px; }
+.stat-row { display: flex; gap: 18px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .k {
+  font: 600 10px/1 Saira, sans-serif; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--faint);
+}
+.stat .v {
+  font: 600 16px/1.1 "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.vars {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 5px;
+}
+.var {
+  display: flex; justify-content: space-between; gap: 6px;
+  padding: 5px 7px; border-radius: 3px; background: var(--panel-2);
+  font: 500 11.5px/1 "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.var b { color: var(--accent); font-weight: 600; }
+.var span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+
+.note {
+  padding: 9px 11px; border-radius: var(--radius);
+  font-size: 12.5px; line-height: 1.5;
+  border-left: 3px solid var(--line); background: var(--panel-2);
+}
+.note.err { border-left-color: var(--accent); background: var(--accent-soft); }
+.note.warn { border-left-color: var(--signal); background: var(--signal-soft); }
+.note.ok { border-left-color: var(--ok); background: var(--ok-soft); }
+.note code {
+  font: 500 12px/1 "IBM Plex Mono", monospace;
+  background: rgba(128,128,128,.15); padding: 1px 4px; border-radius: 2px;
+}
+.note .t { font-weight: 600; display: block; margin-bottom: 2px; }
+
+.hint { color: var(--muted); font-size: 12.5px; padding: 0 14px 14px; }
+.hint code {
+  font: 500 12px/1 "IBM Plex Mono", monospace;
+  background: var(--panel-2); padding: 1px 5px; border-radius: 2px;
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="masthead">
+  <span class="mark" aria-hidden="true"></span>
+  <h1>TI-84 Bench</h1>
+  <p>Runs TI-BASIC on a simulated 26&times;10 home screen. Same token stream the calculator sees, so typos fail here the way they fail there.</p>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <header>
+      <h2>Source</h2>
+      <span id="size-readout" class="stat"><span class="v" style="font-size:12px;color:var(--muted)"></span></span>
+    </header>
+    <div class="picker" id="picker"></div>
+    <textarea id="source" spellcheck="false" aria-label="TI-BASIC source"></textarea>
+  </section>
+
+  <section class="card">
+    <header>
+      <h2>Handheld</h2>
+      <button class="chip" id="screen-toggle" type="button" aria-pressed="false">83+ / 16&times;8</button>
+    </header>
+
+    <div class="device">
+      <div class="lcd-frame">
+        <pre class="lcd" id="lcd"></pre>
+        <pre class="ruler" id="ruler"></pre>
+      </div>
+      <div class="badge-row" id="badges"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="run" type="button">Run</button>
+      <button class="btn" id="step" type="button">Step</button>
+      <button class="btn" id="reset" type="button">Reset</button>
+    </div>
+
+    <div class="ask" id="ask"></div>
+    <div class="readout" id="readout"></div>
+    <p class="hint">Programs run on <code>Run</code>. <code>Step</code> advances one statement at a time and shows it below the screen &mdash; TI-BASIC has no debugger, so this is the closest thing.</p>
+  </section>
+</div>
+
+<script id="tokens" type="application/json">/*{{TOKENS}}*/</script>
+<script id="programs" type="application/json">/*{{PROGRAMS}}*/</script>
+<script>/*{{INTERPRETER}}*/</script>
+<script>
+(function () {
+  "use strict";
+  var TABLE = JSON.parse(document.getElementById("tokens").textContent);
+  var PROGRAMS = JSON.parse(document.getElementById("programs").textContent);
+
+  var el = function (id) { return document.getElementById(id); };
+  var lcdEl = el("lcd"), rulerEl = el("ruler"), askEl = el("ask");
+  var readoutEl = el("readout"), badgesEl = el("badges"), sourceEl = el("source");
+
+  var narrow = false;
+  var session = null;
+
+  /* ---- program picker ---- */
+  var names = Object.keys(PROGRAMS);
+  var active = names[0];
+  names.forEach(function (name) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = name;
+    b.setAttribute("aria-pressed", String(name === active));
+    b.addEventListener("click", function () {
+      active = name;
+      sourceEl.value = PROGRAMS[name];
+      Array.prototype.forEach.call(el("picker").children, function (c) {
+        c.setAttribute("aria-pressed", String(c.textContent === name));
+      });
+      reset();
+    });
+    el("picker").appendChild(b);
+  });
+  sourceEl.value = PROGRAMS[active];
+
+  /* ---- screen ---- */
+  function blankScreen() {
+    return new TI84.Screen(
+      narrow ? TI84.NARROW_COLS : TI84.COLS,
+      narrow ? TI84.NARROW_ROWS : TI84.ROWS);
+  }
+
+  function paint(screen) {
+    lcdEl.textContent = screen.lines().join("\n");
+    var ruler = "";
+    for (var c = 1; c <= screen.cols; c++) {
+      ruler += (c % 5 === 0) ? String(c % 10) : " ";
+    }
+    rulerEl.textContent = ruler;
+  }
+
+  function badges(screen, state) {
+    badgesEl.innerHTML = "";
+    [screen.cols + "×" + screen.rows,
+     narrow ? "TI-84 Plus" : "TI-84 Plus CE",
+     state].forEach(function (text) {
+      if (!text) return;
+      var s = document.createElement("span");
+      s.className = "badge";
+      s.textContent = text;
+      badgesEl.appendChild(s);
+    });
+  }
+
+  /* ---- readout ---- */
+  function note(kind, title, body) {
+    var d = document.createElement("div");
+    d.className = "note " + kind;
+    var t = document.createElement("span");
+    t.className = "t";
+    t.textContent = title;
+    d.appendChild(t);
+    if (body) d.appendChild(document.createTextNode(body));
+    return d;
+  }
+
+  function stat(key, value) {
+    var w = document.createElement("div");
+    w.className = "stat";
+    var k = document.createElement("span");
+    k.className = "k"; k.textContent = key;
+    var v = document.createElement("span");
+    v.className = "v"; v.textContent = value;
+    w.appendChild(k); w.appendChild(v);
+    return w;
+  }
+
+  function renderReadout(s) {
+    readoutEl.innerHTML = "";
+    if (!s) return;
+
+    var row = document.createElement("div");
+    row.className = "stat-row";
+    row.appendChild(stat("statements", s.machine.steps));
+    row.appendChild(stat("bytes on device", s.bytes === null ? "—" : s.bytes));
+    if (s.current) row.appendChild(stat("line", s.current.line));
+    readoutEl.appendChild(row);
+
+    if (s.current) {
+      readoutEl.appendChild(note("", "Next statement", s.current.source));
+    }
+
+    if (s.error) {
+      var isLimit = s.error.name === "Unsupported";
+      readoutEl.appendChild(note(
+        isLimit ? "warn" : "err",
+        isLimit ? "Simulator limit" : s.error.message,
+        isLimit
+          ? s.error.message + " — not a bug in your program. This runner covers a subset; lists, matrices and the graph screen are not in it."
+          : "The handheld would stop here and offer Goto."));
+    } else if (s.done) {
+      readoutEl.appendChild(note("ok", "Finished", s.machine.steps + " statements executed."));
+    }
+
+    if (s.screen.truncated.length) {
+      var d = note("warn",
+        s.screen.truncated.length + " line(s) cut off at " + s.screen.cols + " columns", "");
+      s.screen.truncated.forEach(function (text) {
+        var p = document.createElement("div");
+        p.style.marginTop = "4px";
+        var c = document.createElement("code");
+        c.textContent = text;
+        p.appendChild(c);
+        d.appendChild(p);
+      });
+      readoutEl.appendChild(d);
+    }
+
+    var keys = Object.keys(s.machine.vars).sort();
+    if (keys.length) {
+      var grid = document.createElement("div");
+      grid.className = "vars";
+      keys.forEach(function (k) {
+        var cell = document.createElement("div");
+        cell.className = "var";
+        var b = document.createElement("b"); b.textContent = k;
+        var v = document.createElement("span"); v.textContent = TI84.tiStr(s.machine.vars[k]);
+        cell.appendChild(b); cell.appendChild(v);
+        grid.appendChild(cell);
+      });
+      readoutEl.appendChild(grid);
+    }
+  }
+
+  /* ---- byte cost, the number that actually matters on the device ---- */
+  function byteCost(source) {
+    try {
+      var scanner = new TI84.Scanner(TABLE);
+      var pre = TI84.preprocess(source, scanner);
+      var tokens = scanner.scan(pre.text);
+      var total = 0;
+      for (var i = 0; i < tokens.length; i++) {
+        var t = tokens[i];
+        if (t.kind === "str") {
+          // Each character inside a string is its own token, and the
+          // lowercase ones are two bytes apiece.
+          var body = t.text.replace(/"/g, "");
+          total += 1;                       // the opening quote
+          for (var c = 0; c < body.length; c++) {
+            total += (scanner.bits(body[c]).length / 2) || 1;
+          }
+          if (t.text.slice(-1) === '"' && t.text.length > 1) total += 1;
+        } else {
+          total += (scanner.bits(t.text).length / 2) || 1;
+        }
+      }
+      return total;
+    } catch (err) { return null; }
+  }
+
+  /* ---- driving the generator ---- */
+  function newSession(stepping) {
+    var scanner = new TI84.Scanner(TABLE);
+    var screen = blankScreen();
+    var machine = new TI84.Machine(scanner, screen);
+    return {
+      screen: screen, machine: machine, stepping: stepping,
+      iterator: machine.run(sourceEl.value, { step: stepping }),
+      done: false, error: null, current: null,
+      bytes: byteCost(sourceEl.value)
+    };
+  }
+
+  function advance(sendValue) {
+    if (!session || session.done) return;
+    var result;
+    try {
+      result = session.iterator.next(sendValue);
+    } catch (err) {
+      session.error = err;
+      session.done = true;
+      finish();
+      return;
+    }
+    if (result.done) {
+      session.done = true;
+      session.current = null;
+      finish();
+      return;
+    }
+    var request = result.value;
+    if (request.type === "step") {
+      session.current = request;
+      render("stepping");
+      return;                       // wait for the next Step click
+    }
+    if (request.type === "input") { askInput(request); return; }
+    if (request.type === "menu") { askMenu(request); return; }
+    if (request.type === "pause") { askPause(); return; }
+    advance();                      // nothing to ask; keep going
+  }
+
+  function runToEnd() {
+    session = newSession(false);
+    clearAsk();
+    advance();
+  }
+
+  function finish() {
+    clearAsk();
+    render(session.error ? "stopped" : "done");
+  }
+
+  function render(state) {
+    paint(session ? session.screen : blankScreen());
+    badges(session ? session.screen : blankScreen(), state);
+    renderReadout(session);
+  }
+
+  function clearAsk() { askEl.className = "ask"; askEl.innerHTML = ""; }
+
+  function askInput(request) {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "waiting for input");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+
+    var label = document.createElement("label");
+    label.textContent = request.prompt;
+    label.setAttribute("for", "ask-input");
+    var row = document.createElement("div");
+    row.className = "row";
+    var input = document.createElement("input");
+    input.id = "ask-input";
+    input.type = "text";
+    input.inputMode = "decimal";
+    input.autocomplete = "off";
+    var send = document.createElement("button");
+    send.className = "btn primary";
+    send.type = "button";
+    send.textContent = "Enter";
+
+    function submit() {
+      var value = input.value.trim();
+      if (!value) { input.focus(); return; }
+      clearAsk();
+      advance(value);
+    }
+    send.addEventListener("click", submit);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+    });
+
+    row.appendChild(input); row.appendChild(send);
+    askEl.appendChild(label); askEl.appendChild(row);
+    input.focus();
+  }
+
+  function askMenu(request) {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "menu");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+
+    var label = document.createElement("label");
+    label.textContent = "Choose";
+    var list = document.createElement("div");
+    list.className = "menu-opts";
+    request.options.forEach(function (text, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      var n = document.createElement("b");
+      n.textContent = (i + 1) + ":";
+      b.appendChild(n);
+      b.appendChild(document.createTextNode(text));
+      b.addEventListener("click", function () { clearAsk(); advance(i); });
+      list.appendChild(b);
+    });
+    askEl.appendChild(label);
+    askEl.appendChild(list);
+    list.querySelector("button").focus();
+  }
+
+  function askPause() {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "paused");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+    var label = document.createElement("label");
+    label.textContent = "Paused";
+    var b = document.createElement("button");
+    b.className = "btn primary";
+    b.type = "button";
+    b.textContent = "Continue";
+    b.addEventListener("click", function () { clearAsk(); advance(); });
+    askEl.appendChild(label);
+    askEl.appendChild(b);
+    b.focus();
+  }
+
+  function reset() {
+    session = null;
+    clearAsk();
+    paint(blankScreen());
+    badges(blankScreen(), "ready");
+    readoutEl.innerHTML = "";
+    var bytes = byteCost(sourceEl.value);
+    readoutEl.appendChild(note("", "Not running",
+      bytes === null
+        ? "Press Run."
+        : bytes + " bytes on the handheld. Press Run."));
+  }
+
+  /* ---- wiring ---- */
+  el("run").addEventListener("click", runToEnd);
+  el("step").addEventListener("click", function () {
+    if (!session || session.done) session = newSession(true);
+    else if (!session.stepping) session = newSession(true);
+    advance();
+  });
+  el("reset").addEventListener("click", reset);
+  el("screen-toggle").addEventListener("click", function () {
+    narrow = !narrow;
+    this.setAttribute("aria-pressed", String(narrow));
+    this.textContent = narrow ? "CE / 26×10" : "83+ / 16×8";
+    reset();
+  });
+  sourceEl.addEventListener("input", function () {
+    if (!session || session.done) reset();
+  });
+
+  reset();
+})();
+</script>

@@ -1,0 +1,1424 @@
+<title>TI-84 Bench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  /* Neutrals carry a slate-blue bias, taken from the calculator's own
+     graphite shell rather than a stock grey ramp. */
+  --ground: #E7E9ED;
+  --panel: #FFFFFF;
+  --panel-2: #F1F3F6;
+  --line: #D2D7DF;
+  --text: #1B1F27;
+  --muted: #5C6473;
+  --faint: #8C94A3;
+
+  /* The chassis and the LCD are physical objects. They look the same
+     under either theme, the way the calculator on your desk does. */
+  --chassis: #24272F;
+  --chassis-2: #171A20;
+  --lcd: #F3F2EC;
+  --lcd-grid: #E2E1D8;
+  --ink: #15171B;
+
+  --accent: #C93B2B;
+  --accent-soft: #F4DEDA;
+  --signal: #B47C1F;
+  --signal-soft: #F6EBD5;
+  --ok: #327468;
+  --ok-soft: #DCEAE6;
+
+  --radius: 4px;
+  --gap: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14161B;
+    --panel: #1C1F26;
+    --panel-2: #23272F;
+    --line: #333846;
+    --text: #E4E7ED;
+    --muted: #99A1B0;
+    --faint: #6D7583;
+    --accent: #E56A57;
+    --accent-soft: #3A2320;
+    --signal: #D7A245;
+    --signal-soft: #372B18;
+    --ok: #64B0A1;
+    --ok-soft: #1B322E;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14161B;
+  --panel: #1C1F26;
+  --panel-2: #23272F;
+  --line: #333846;
+  --text: #E4E7ED;
+  --muted: #99A1B0;
+  --faint: #6D7583;
+  --accent: #E56A57;
+  --accent-soft: #3A2320;
+  --signal: #D7A245;
+  --signal-soft: #372B18;
+  --ok: #64B0A1;
+  --ok-soft: #1B322E;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: Saira, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+.masthead {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.masthead h1 {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+}
+.masthead .mark {
+  width: 10px; height: 20px; border-radius: 2px;
+  background: var(--accent); flex: none;
+}
+.masthead p { margin: 0; color: var(--muted); font-size: 13px; max-width: 62ch; }
+
+.wrap {
+  display: grid; gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  align-items: start;
+  padding: var(--gap) 24px 48px;
+  max-width: 1180px; margin: 0 auto;
+}
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+}
+.card > header h2 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- program picker ---- */
+.picker { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 14px; }
+.chip {
+  font: 600 12px/1 Saira, sans-serif; letter-spacing: 0.04em;
+  padding: 7px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.chip:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+textarea#source {
+  display: block; width: 100%; min-height: 380px; resize: vertical;
+  border: 0; border-top: 1px solid var(--line);
+  padding: 14px;
+  background: var(--panel); color: var(--text);
+  font: 400 12.5px/1.65 "IBM Plex Mono", ui-monospace, monospace;
+  tab-size: 2;
+}
+
+/* ---- the device ---- */
+.device {
+  background: linear-gradient(180deg, var(--chassis) 0%, var(--chassis-2) 100%);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lcd-frame {
+  background: var(--lcd);
+  border-radius: 3px;
+  padding: 10px 11px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.06);
+  overflow-x: auto;
+}
+pre.lcd {
+  margin: 0; color: var(--ink);
+  font: 500 13px/1.42 "IBM Plex Mono", ui-monospace, monospace;
+  white-space: pre;
+  /* Faint row banding, the way an LCD's pixel grid reads up close. */
+  background-image: repeating-linear-gradient(
+    180deg, transparent 0 17px, var(--lcd-grid) 17px 18.46px);
+}
+.ruler {
+  margin: 6px 0 0; color: #9A9A8E;
+  font: 400 10px/1 "IBM Plex Mono", monospace; white-space: pre;
+}
+.device .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge {
+  font: 600 10px/1 Saira, sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 8px; border-radius: 3px;
+  background: rgba(255,255,255,.08); color: #C8CCD4;
+}
+
+/* ---- controls ---- */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
+button.btn {
+  font: 600 13px/1 Saira, sans-serif;
+  padding: 9px 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  cursor: pointer;
+}
+button.btn:hover:not(:disabled) { border-color: var(--accent); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---- the prompt row: the calculator asking you for something ---- */
+.ask { padding: 0 14px 14px; display: none; }
+.ask.on { display: block; }
+.ask label {
+  display: block; font: 600 11px/1 Saira, sans-serif;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 7px;
+}
+.ask .row { display: flex; gap: 8px; }
+.ask input {
+  flex: 1; min-width: 0;
+  padding: 9px 11px; border-radius: var(--radius);
+  border: 1px solid var(--accent); background: var(--panel-2); color: var(--text);
+  font: 500 14px/1 "IBM Plex Mono", monospace;
+}
+.menu-opts { display: flex; flex-direction: column; gap: 6px; }
+.menu-opts button {
+  display: flex; gap: 10px; align-items: baseline; text-align: left;
+  font: 500 13px/1.3 "IBM Plex Mono", monospace;
+  padding: 9px 11px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  cursor: pointer;
+}
+.menu-opts button:hover { border-color: var(--accent); }
+.menu-opts b { color: var(--accent); font-weight: 600; }
+
+/* ---- readout ---- */
+.readout { padding: 12px 14px; display: grid; gap: 10px; }
+.stat-row { display: flex; gap: 18px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .k {
+  font: 600 10px/1 Saira, sans-serif; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--faint);
+}
+.stat .v {
+  font: 600 16px/1.1 "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.vars {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 5px;
+}
+.var {
+  display: flex; justify-content: space-between; gap: 6px;
+  padding: 5px 7px; border-radius: 3px; background: var(--panel-2);
+  font: 500 11.5px/1 "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.var b { color: var(--accent); font-weight: 600; }
+.var span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+
+.note {
+  padding: 9px 11px; border-radius: var(--radius);
+  font-size: 12.5px; line-height: 1.5;
+  border-left: 3px solid var(--line); background: var(--panel-2);
+}
+.note.err { border-left-color: var(--accent); background: var(--accent-soft); }
+.note.warn { border-left-color: var(--signal); background: var(--signal-soft); }
+.note.ok { border-left-color: var(--ok); background: var(--ok-soft); }
+.note code {
+  font: 500 12px/1 "IBM Plex Mono", monospace;
+  background: rgba(128,128,128,.15); padding: 1px 4px; border-radius: 2px;
+}
+.note .t { font-weight: 600; display: block; margin-bottom: 2px; }
+
+.hint { color: var(--muted); font-size: 12.5px; padding: 0 14px 14px; }
+.hint code {
+  font: 500 12px/1 "IBM Plex Mono", monospace;
+  background: var(--panel-2); padding: 1px 5px; border-radius: 2px;
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="masthead">
+  <span class="mark" aria-hidden="true"></span>
+  <h1>TI-84 Bench</h1>
+  <p>Runs TI-BASIC on a simulated 26&times;10 home screen. Same token stream the calculator sees, so typos fail here the way they fail there.</p>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <header>
+      <h2>Source</h2>
+      <span id="size-readout" class="stat"><span class="v" style="font-size:12px;color:var(--muted)"></span></span>
+    </header>
+    <div class="picker" id="picker"></div>
+    <textarea id="source" spellcheck="false" aria-label="TI-BASIC source"></textarea>
+  </section>
+
+  <section class="card">
+    <header>
+      <h2>Handheld</h2>
+      <button class="chip" id="screen-toggle" type="button" aria-pressed="false">83+ / 16&times;8</button>
+    </header>
+
+    <div class="device">
+      <div class="lcd-frame">
+        <pre class="lcd" id="lcd"></pre>
+        <pre class="ruler" id="ruler"></pre>
+      </div>
+      <div class="badge-row" id="badges"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="run" type="button">Run</button>
+      <button class="btn" id="step" type="button">Step</button>
+      <button class="btn" id="reset" type="button">Reset</button>
+    </div>
+
+    <div class="ask" id="ask"></div>
+    <div class="readout" id="readout"></div>
+    <p class="hint">Programs run on <code>Run</code>. <code>Step</code> advances one statement at a time and shows it below the screen &mdash; TI-BASIC has no debugger, so this is the closest thing.</p>
+  </section>
+</div>
+
+<script id="tokens" type="application/json">{"\n": "3f", "\r\n": "3f", " ": "29", " and ": "40", " nCr ": "95", " nPr ": "94", " or ": "3c", " xor ": "3d", "!": "2d", "!=": "6f", "\"": "2a", "#": "bbd2", "$": "bbd3", "%": "bbda", "&": "bbd4", "'": "ae", "(": "10", ")": "11", "*": "82", "*row(": "17", "*row+(": "18", "+": "70", ",": "2b", "-": "71", "->": "04", ".": "3a", "...": "bbdb", "/": "83", "0": "30", "1": "31", "1-PropZInt(": "bb43", "1-PropZTest(": "bb3e", "1-Var Stats ": "f2", "10^^(": "c1", "2": "32", "2-PropZInt(": "bb44", "2-PropZTest(": "bb3f", "2-SampFTest ": "bb47", "2-SampTInt ": "bb49", "2-SampTTest ": "bb46", "2-SampZInt(": "bb42", "2-SampZTest(": "bb3d", "2-Samp𝐅Test ": "bb47", "2-Samp𝙵Test ": "bb47", "2-Var Stats ": "f3", "3": "33", "4": "34", "5": "35", "6": "36", "7": "37", "8": "38", "9": "39", ":": "3e", ";": "bbd6", "<": "6b", "<=": "6d", "<|": "bbeb", "=": "6a", ">": "6c", ">=": "6e", ">DMS": "01", ">Dec": "02", ">Eff(": "bb06", ">F<>D": "ef31", ">Frac": "03", ">Nom(": "bb05", ">Polar": "bb30", ">Rect": "bb2f", ">n/d<>Un/d": "ef30", ">n⁄d<>Un⁄d": "ef30", "?": "af", "@": "bbd1", "A": "41", "ANOVA(": "bb59", "AUTO": "ef3b", "Ans": "72", "Archive ": "bb68", "Asm(": "bb6a", "Asm84CEPrgm": "ef7a", "Asm84CPrgm": "ef68", "AsmComp(": "bb6b", "AsmPrgm": "bb6c", "AxesOff": "7e09", "AxesOn ": "7e08", "B": "42", "BLACK": "ef43", "BLUE": "ef41", "BROWN": "ef47", "BackgroundOff": "ef64", "BackgroundOn ": "ef5b", "Black": "ef43", "Blue": "ef41", "BorderColor ": "ef6c", "Boxplot": "05", "Brown": "ef47", "C": "43", "C/Y": "6331", "CENTER": "ef93", "CLASSIC": "ef38", "Circle(": "a5", "Clear Entries": "bb57", "ClockOff": "ef0f", "ClockOn": "ef10", "ClrAllLists": "bb52", "ClrDraw": "85", "ClrHome": "e1", "ClrList ": "fa", "ClrTable": "fb", "CoordOff": "7e05", "CoordOn": "7e04", "Copy Line": "efa2", "CubicReg ": "2e", "Cut Line": "efa1", "D": "44", "DARKGRAY": "ef4f", "DARKGREY": "ef4f", "DEC": "ef3c", "DS<(": "db", "DarkGray": "ef4f", "DarkGrey": "ef4f", "Degree": "65", "DelVar ": "bb54", "Delta": "bba2", "DeltaList(": "bb2c", "DeltaTbl": "6321", "DeltaX": "6326", "DeltaY": "6327", "DependAsk": "7d", "DependAuto": "7c", "DetectAsymOff": "ef6b", "DetectAsymOn": "ef6a", "DiagnosticOff": "bb67", "DiagnosticOn": "bb66", "Disp ": "de", "DispGraph": "df", "DispTable": "e5", "Dot-Thick": "7e07", "Dot-Thin": "ef75", "DrawF ": "a9", "DrawInv ": "a8", "E": "45", "Else": "d0", "End": "d4", "Eng": "68", "Equ>String(": "bb55", "Equ►String(": "bb55", "ExecLib ": "ef12", "Execute Program": "ef9e", "ExpReg ": "f5", "ExprOff": "bb51", "ExprOn": "bb50", "F": "46", "FRAC-APPROX": "ef3d", "FV": "632f", "Fcdf(": "bb14", "Fill(": "e2", "Fix ": "73", "Float": "69", "FnOff ": "97", "FnOn ": "96", "For(": "d3", "Fpdf(": "bb1e", "Full": "75", "Func": "76", "G": "47", "G-T": "bb64", "GDB0": "6109", "GDB1": "6100", "GDB2": "6101", "GDB3": "6102", "GDB4": "6103", "GDB5": "6104", "GDB6": "6105", "GDB7": "6106", "GDB8": "6107", "GDB9": "6108", "GRAY": "ef4e", "GREEN": "ef45", "GREY": "ef4e", "GarbageCollect": "bbce", "Get(": "e8", "GetCalc(": "bb53", "Goto ": "d7", "GraphColor(": "ef65", "GraphStyle(": "bb45", "Gray": "ef4e", "Green": "ef45", "Grey": "ef4e", "GridDot ": "7e0a", "GridLine ": "ef5a", "GridOff": "7e0b", "H": "48", "Histogram": "fc", "Horiz": "74", "Horizontal ": "a6", "I": "49", "I%": "632c", "IS>(": "da", "If ": "ce", "Image0": "ef59", "Image1": "ef50", "Image2": "ef51", "Image3": "ef52", "Image4": "ef53", "Image5": "ef54", "Image6": "ef55", "Image7": "ef56", "Image8": "ef57", "Image9": "ef58", "IndpntAsk": "7b", "IndpntAuto": "7a", "Input ": "dc", "Insert Comment Above": "efa4", "Insert Line Above": "efa0", "J": "4a", "K": "4b", "L": "4c", "L1": "5d00", "L2": "5d01", "L3": "5d02", "L4": "5d03", "L5": "5d04", "L6": "5d05", "LEFT": "ef92", "LTBLUE": "ef49", "LTGRAY": "ef4c", "LTGREY": "ef4c", "LabelOff": "7e0d", "LabelOn": "7e0c", "Lbl ": "d6", "LinReg(a+bx) ": "f4", "LinReg(ax+b) ": "ff", "LinRegTInt ": "ef15", "LinRegTTest ": "bb34", "Line(": "9c", "List>matr(": "bb3a", "List►matr(": "bb3a", "LnReg ": "f6", "Logistic ": "bb33", "LtBlue": "ef49", "LtGray": "ef4c", "LtGrey": "ef4c", "L₁": "5d00", "L₂": "5d01", "L₃": "5d02", "L₄": "5d03", "L₅": "5d04", "L₆": "5d05", "M": "4d", "MAGENTA": "ef44", "MATHPRINT": "ef37", "MEDGRAY": "ef4d", "MEDGREY": "ef4d", "Magenta": "ef44", "Manual-Fit ": "ef16", "Matr>list(": "bb39", "Matr►list(": "bb39", "Med": "6213", "Med-Med ": "f8", "MedGray": "ef4d", "MedGrey": "ef4d", "Menu(": "e6", "ModBoxplot": "bb5a", "N": "4e", "NAVY": "ef48", "Navy": "ef48", "NormProbPlot": "bb5b", "Normal": "66", "O": "4f", "ORANGE": "ef46", "Omega": "bbac", "OpenLib(": "ef11", "Orange": "ef46", "Output(": "e0", "P": "50", "P/Y": "6330", "P>Rx(": "1d", "P>Ry(": "1e", "PMT": "632e", "PV": "632d", "Param": "77", "Paste Line Below": "efa3", "Pause ": "d8", "Phi": "bbab", "Pic0": "6009", "Pic1": "6000", "Pic2": "6001", "Pic3": "6002", "Pic4": "6003", "Pic5": "6004", "Pic6": "6005", "Pic7": "6006", "Pic8": "6007", "Pic9": "6008", "Plot1(": "ec", "Plot2(": "ed", "Plot3(": "ee", "PlotStart": "631b", "PlotStep": "6334", "PlotsOff ": "ea", "PlotsOn ": "e9", "PlySmlt2": "ef79", "Pmt_Bgn": "bb4c", "Pmt_End": "bb4b", "Polar": "78", "PolarGC": "7e02", "PrintScreen": "91", "Prompt ": "dd", "Pt-Change(": "a0", "Pt-Off(": "9f", "Pt-On(": "9e", "PwrReg ": "f7", "Pxl-Change(": "a3", "Pxl-Off(": "a2", "Pxl-On(": "a1", "P►Rx(": "1d", "P►Ry(": "1e", "Q": "51", "QuadReg ": "f9", "QuartReg ": "2f", "Quartiles Setting...": "ef81", "Quartiles Setting…": "ef81", "QuickPlot&Fit-EQ": "ef66", "Quit Editor": "efa5", "Q₁": "6214", "Q₃": "6215", "R": "52", "R>Pr(": "1b", "R>Ptheta(": "1c", "R>Pθ(": "1c", "RED": "ef42", "RIGHT": "ef94", "Radian": "64", "Real": "bb4d", "RecallGDB ": "9b", "RecallPic ": "99", "RectGC": "7e03", "Red": "ef42", "RegEQ": "6201", "Repeat ": "d2", "Return": "d5", "R²": "6236", "R►Pr(": "1b", "R►Ptheta(": "1c", "R►Pθ(": "1c", "S": "53", "SEQ(n)": "ef8f", "SEQ(n+1)": "ef90", "SEQ(n+2)": "ef91", "SEQ(𝑛)": "ef8f", "SEQ(𝑛+1)": "ef90", "SEQ(𝑛+2)": "ef91", "SEQ(𝒏)": "ef8f", "SEQ(𝒏+1)": "ef90", "SEQ(𝒏+2)": "ef91", "STATWIZARD OFF": "ef40", "STATWIZARD ON": "ef3f", "Scatter": "fe", "Sci": "67", "Select(": "bb58", "Send(": "e7", "Seq": "79", "Sequential": "7e00", "SetUpEditor ": "bb4a", "Shade(": "a4", "ShadeF(": "bb38", "ShadeNorm(": "bb35", "Shade_t(": "bb36", "Shadechi^2(": "bb37", "Shadechi²(": "bb37", "Shadeχ^2(": "bb37", "Shadeχ²(": "bb37", "Shade𝐅(": "bb38", "Shade𝙵(": "bb38", "Sigma": "bba9", "Sigma(": "ef33", "SigmaInt(": "bb04", "SigmaPrn(": "bb03", "Simul": "7e01", "SinReg ": "bb32", "SortA(": "e3", "SortD(": "e4", "Stop": "d9", "StoreGDB ": "9a", "StorePic ": "98", "Str0": "aa09", "Str1": "aa00", "Str2": "aa01", "Str3": "aa02", "Str4": "aa03", "Str5": "aa04", "Str6": "aa05", "Str7": "aa06", "Str8": "aa07", "Str9": "aa08", "String>Equ(": "bb56", "String►Equ(": "bb56", "Sx": "6206", "Sxp": "6231", "Sx₁": "622c", "Sx₂": "622f", "Sy": "620f", "T": "54", "T-Test ": "bb3c", "TInterval ": "bb48", "Tangent(": "a7", "TblInput": "632a", "TblStart": "631a", "Text(": "93", "TextColor(": "ef67", "Then": "cf", "Thick": "7e06", "Thin": "ef74", "Time": "7e0f", "Tmax": "630f", "Tmin": "630e", "Trace": "84", "TraceStep": "6338", "Tstep": "6322", "U": "55", "Un-1": "6306", "Un-₁": "6306", "Un/d": "ef2f", "UnArchive ": "bb69", "Undo Clear": "ef9f", "Un⁄d": "ef3a", "U𝑛-₁": "6306", "U𝒏-₁": "6306", "V": "56", "Vertical ": "9d", "Vn-1": "6307", "Vn-₁": "6307", "V𝑛-₁": "6307", "V𝒏-₁": "6307", "W": "57", "WHITE": "ef4b", "Wait ": "ef96", "Web": "7e0e", "While ": "d1", "White": "ef4b", "X": "58", "XFact": "6328", "Xmax": "630b", "Xmin": "630a", "Xres": "6336", "Xscl": "6302", "X₁ᴛ": "5e20", "X₂ᴛ": "5e22", "X₃ᴛ": "5e24", "X₄ᴛ": "5e26", "X₅ᴛ": "5e28", "X₆ᴛ": "5e2a", "Y": "59", "YELLOW": "ef4a", "YFact": "6329", "Yellow": "ef4a", "Ymax": "630d", "Ymin": "630c", "Yscl": "6303", "Y₀": "5e19", "Y₁": "5e10", "Y₁ᴛ": "5e21", "Y₂": "5e11", "Y₂ᴛ": "5e23", "Y₃": "5e12", "Y₃ᴛ": "5e25", "Y₄": "5e13", "Y₄ᴛ": "5e27", "Y₅": "5e14", "Y₅ᴛ": "5e29", "Y₆": "5e15", "Y₆ᴛ": "5e2b", "Y₇": "5e16", "Y₈": "5e17", "Y₉": "5e18", "Z": "5a", "Z-Test(": "bb3b", "ZBox": "88", "ZDecimal": "8e", "ZFrac1/10": "ef1d", "ZFrac1/2": "ef18", "ZFrac1/3": "ef19", "ZFrac1/4": "ef1a", "ZFrac1/5": "ef1b", "ZFrac1/8": "ef1c", "ZFrac1⁄10": "ef1d", "ZFrac1⁄2": "ef18", "ZFrac1⁄3": "ef19", "ZFrac1⁄4": "ef1a", "ZFrac1⁄5": "ef1b", "ZFrac1⁄8": "ef1c", "ZInteger": "8c", "ZInterval ": "bb41", "ZPlotStart": "631c", "ZPlotStep": "6335", "ZPrevious": "8d", "ZQuadrant1": "ef17", "ZSquare": "8b", "ZStandard": "86", "ZTmax": "6319", "ZTmin": "6318", "ZTrig": "87", "ZTstep": "6324", "ZXmax": "6313", "ZXmin": "6312", "ZXres": "6337", "ZXscl": "6300", "ZYmax": "6315", "ZYmin": "6314", "ZYscl": "6301", "ZnMax": "631e", "ZnMin": "6320", "Zoom In": "89", "Zoom Out": "8a", "ZoomFit": "bb65", "ZoomRcl": "90", "ZoomStat": "8f", "ZoomSto": "92", "Zthetamax": "6317", "Zthetamin": "6316", "Zthetastep": "6325", "Zu(nMin)": "6308", "Zu(nmin)": "6308", "Zu(𝑛Min)": "6308", "Zu(𝒏Min)": "6308", "Zv(nMin)": "6309", "Zv(nmin)": "6309", "Zv(𝑛Min)": "6309", "Zv(𝒏Min)": "6309", "Zw(nMin)": "6333", "Zw(𝑛Min)": "6333", "Zw(𝒏Min)": "6333", "Zθmax": "6317", "Zθmin": "6316", "Zθstep": "6325", "Z𝑛Max": "631e", "Z𝑛Min": "6320", "Z𝒏Max": "631e", "Z𝒏Min": "6320", "[": "06", "[AUTO]": "ef3b", "[A]": "5c00", "[B]": "5c01", "[CLASSIC]": "ef38", "[C]": "5c02", "[DEC]": "ef3c", "[D]": "5c03", "[E]": "5c04", "[FRAC-APPROX]": "ef3d", "[F]": "5c05", "[G]": "5c06", "[H]": "5c07", "[I]": "5c08", "[J]": "5c09", "[MATHPRINT]": "ef37", "[Med]": "6213", "[Q1]": "6214", "[Q3]": "6215", "[Q₁]": "6214", "[Q₃]": "6215", "[R^2]": "6236", "[RegEQ]": "6201", "[STATWIZARD OFF]": "ef40", "[STATWIZARD ON]": "ef3f", "[Sigmax]": "6204", "[Sigmax^2]": "6205", "[Sigmaxy]": "6211", "[Sigmay]": "620d", "[Sigmay^2]": "620e", "[Sx1]": "622c", "[Sx2]": "622f", "[Sx]": "6206", "[Sxp]": "6231", "[Sy]": "620f", "[Un/d]": "ef3a", "[chi^2]": "6225", "[df]": "6227", "[e]": "bb31", "[errorMS]": "623c", "[errorSS]": "623b", "[errordf]": "623a", "[factorMS]": "6239", "[factorSS]": "6238", "[factordf]": "6237", "[i]": "2c", "[lower]": "6232", "[maxX]": "6209", "[maxY]": "620b", "[minX]": "6208", "[minY]": "620a", "[n/d]": "ef39", "[n1]": "622d", "[n2]": "6230", "[n]": "6202", "[p]": "6222", "[phat1]": "6229", "[phat2]": "622a", "[phat]": "6228", "[p̂]": "6228", "[r]": "6212", "[r^2]": "6235", "[recursiven]": "6221", "[s]": "6234", "[sigmax]": "6207", "[sigmay]": "6210", "[t]": "6224", "[upper]": "6233", "[x1]": "621b", "[x2]": "621c", "[x3]": "621d", "[xhat1]": "622b", "[xhat2]": "622e", "[xhat]": "6203", "[y1]": "621e", "[y2]": "621f", "[y3]": "6220", "[yhat]": "620c", "[z]": "6223", "[|F]": "6226", "[|a]": "6216", "[|b]": "6217", "[|c]": "6218", "[|d]": "6219", "[|e]": "621a", "[ṗ]": "6228", "[𝒏]": "6221", "\\": "bbd7", "\\'": "ae", "]": "07", "^": "f0", "^^'": "bb9a", "^^-1": "0c", "^^2": "0d", "^^3": "0f", "^^:": "bb9c", "^^T": "0e", "^^`": "bb9b", "^^o": "0b", "^^r": "0a", "^^x": "bbde", "_": "bbd9", "`": "bbd5", "a": "bbb0", "a+bi": "bb4f", "a+b𝑖": "bb4f", "abs(": "b2", "acos(": "c5", "acosh(": "cb", "alpha": "bb9f", "angle(": "bb28", "arccos(": "c5", "arccosh(": "cb", "arcsin(": "c3", "arcsinh(": "c9", "arctan(": "c7", "arctanh(": "cd", "asin(": "c3", "asinh(": "c9", "atan(": "c7", "atanh(": "cd", "augment(": "14", "b": "bbb1", "bal(": "bb02", "beta": "bba0", "binomcdf(": "bb16", "binompdf(": "bb15", "bolddownarrow": "bbf3", "bolduparrow": "bbf2", "c": "bbb2", "checkTmr(": "ef02", "chi": "bbae", "chi^2-Test(": "bb40", "chi^2GOF-Test(": "ef14", "chi^2cdf(": "bb13", "chi^2pdf(": "bb1d", "chi²": "6225", "chi²-Test(": "bb40", "chi²GOF-Test(": "ef14", "chi²cdf(": "bb13", "chi²pdf(": "bb1d", "conj(": "bb25", "cos(": "c4", "cos^-1(": "c5", "cosh(": "ca", "cosh^-1(": "cb", "cosh⁻¹(": "cb", "cos⁻¹(": "c5", "crossplot": "80", "cuberoot(": "bd", "cumSum(": "bb29", "d": "bbb3", "dayOfWk(": "ef06", "dbd(": "bb07", "delta": "bba3", "det(": "b3", "dim(": "b5", "dotplot": "81", "downarrow": "bbee", "e": "bbb4", "e^^(": "bf", "epsilon": "bba4", "eval(": "ef98", "expr(": "bb2a", "f": "bbb5", "fMax(": "28", "fMin(": "27", "fPart(": "ba", "fnInt(": "24", "g": "bbb6", "gamma": "bba1", "gcd(": "bb09", "geometcdf(": "bb1a", "geometpdf(": "bb19", "getDate": "ef09", "getDtFmt": "ef0c", "getDtStr(": "ef07", "getKey": "ad", "getTime": "ef0a", "getTmFmt": "ef0d", "getTmStr(": "ef08", "greek_pi": "bba7", "h": "bbb7", "i": "bbb8", "iPart(": "b9", "identity(": "b4", "imag(": "bb27", "inString(": "bb0f", "int(": "b1", "integral": "bbf1", "invBinom(": "ef95", "invNorm(": "bb11", "invT(": "ef13", "invertedequal": "bbf5", "irr(": "bb01", "isClockOn": "ef0e", "j": "bbb9", "k": "bbba", "l": "bbbc", "lambda": "bba5", "lcm(": "bb08", "length(": "bb2b", "ln(": "be", "log(": "c0", "logBASE(": "ef34", "lower": "6232", "m": "bbbd", "mathprintbox": "ef1e", "max(": "19", "maxX": "6209", "maxY": "620b", "mean(": "21", "median(": "1f", "min(": "1a", "minX": "6208", "minY": "620a", "mu": "bba6", "n": "bbbe", "n/d": "ef2e", "nDeriv(": "25", "nMax": "631d", "nMin": "631f", "normalcdf(": "bb10", "normalpdf(": "bb1b", "not(": "b8", "npv(": "bb00", "n⁄d": "ef39", "n₁": "622d", "n₂": "6230", "o": "bbbf", "p": "bbc0", "phat": "bbad", "phat₁": "6229", "phat₂": "622a", "pi": "ac", "piecewise(": "efa6", "plotcross": "80", "plotdot": "81", "plotsquare": "7f", "plottinydot": "ef73", "poissoncdf(": "bb18", "poissonpdf(": "bb17", "prgm": "5f", "prod(": "b7", "pxl-Test(": "13", "p̂1": "6229", "p̂2": "622a", "p̂₁": "6229", "p̂₂": "622a", "q": "bbc1", "r": "bbc2", "rand": "ab", "randBin(": "bb0b", "randInt(": "bb0a", "randIntNoRep(": "ef35", "randM(": "20", "randNorm(": "bb1f", "re^thetai": "bb4e", "re^theta𝑖": "bb4e", "re^θi": "bb4e", "re^θ𝑖": "bb4e", "real(": "bb26", "ref(": "bb2d", "remainder(": "ef32", "rho": "bba8", "round(": "12", "row+(": "16", "rowSwap(": "15", "rref(": "bb2e", "r²": "6235", "r₁": "5e40", "r₂": "5e41", "r₃": "5e42", "r₄": "5e43", "r₅": "5e44", "r₆": "5e45", "r𝑒^θ𝑖": "bb4e", "s": "bbc3", "seq(": "23", "setDate(": "ef00", "setDtFmt(": "ef03", "setTime(": "ef01", "setTmFmt(": "ef04", "sharps": "bbdd", "sigma": "bbcb", "sigmax²": "6205", "sigmay²": "620e", "sin(": "c2", "sin^-1(": "c3", "sinh(": "c8", "sinh^-1(": "c9", "sinh⁻¹(": "c9", "sin⁻¹(": "c3", "small0": "bbe0", "small1": "bbe1", "small10": "bbea", "small2": "bbe2", "small3": "bbe3", "small4": "bbe4", "small5": "bbe5", "small6": "bbe6", "small7": "bbe7", "small8": "bbe8", "small9": "bbe9", "smallL": "eb", "smallT": "bbdf", "solve(": "22", "sqrt(": "bc", "squareplot": "7f", "squareroot": "bbf4", "startTmr": "ef0b", "stdDev(": "bb0d", "sub(": "bb0c", "sum(": "b6", "t": "bbc4", "tan(": "c6", "tan^-1(": "c7", "tanh(": "cc", "tanh^-1(": "cd", "tanh⁻¹(": "cd", "tan⁻¹(": "c7", "tau": "bbcc", "tcdf(": "bb12", "theta": "5b", "thetaMax": "6311", "thetaMin": "6310", "thetastep": "6323", "timeCnv(": "ef05", "tinydotplot": "ef73", "toString(": "ef97", "tpdf(": "bb1c", "tvm_FV": "bb24", "tvm_I%": "bb21", "tvm_N": "bb23", "tvm_PV": "bb22", "tvm_Pmt": "bb20", "tvm_𝗡": "bb23", "u": "bbc5", "u(n)": "ef88", "u(n+1)": "ef8b", "u(n-1)": "ef85", "u(n-2)": "ef82", "u(nMin)": "6304", "u(𝑛)": "ef88", "u(𝑛+1)": "ef8b", "u(𝑛-1)": "ef85", "u(𝑛-2)": "ef82", "u(𝑛Min)": "6304", "u(𝒏)": "ef88", "u(𝒏+1)": "ef8b", "u(𝒏-1)": "ef85", "u(𝒏-2)": "ef82", "u(𝒏Min)": "6304", "uparrow": "bbed", "upper": "6233", "uvAxes": "7e10", "uwAxes": "7e12", "v": "bbc6", "v(n)": "ef89", "v(n+1)": "ef8c", "v(n-1)": "ef86", "v(n-2)": "ef83", "v(nMin)": "6305", "v(𝑛)": "ef89", "v(𝑛+1)": "ef8c", "v(𝑛-1)": "ef86", "v(𝑛-2)": "ef83", "v(𝑛Min)": "6305", "v(𝒏)": "ef89", "v(𝒏+1)": "ef8c", "v(𝒏-1)": "ef86", "v(𝒏-2)": "ef83", "v(𝒏Min)": "6305", "variance(": "bb0e", "vwAxes": "7e11", "w": "bbc7", "w(n)": "ef8a", "w(n+1)": "ef8d", "w(n-1)": "ef87", "w(n-2)": "ef84", "w(nMin)": "6332", "w(𝑛)": "ef8a", "w(𝑛+1)": "ef8d", "w(𝑛-1)": "ef87", "w(𝑛-2)": "ef84", "w(𝑛Min)": "6332", "w(𝒏)": "ef8a", "w(𝒏+1)": "ef8d", "w(𝒏-1)": "ef87", "w(𝒏-2)": "ef84", "w(𝒏Min)": "6332", "x": "bbc8", "xhat₁": "622b", "xhat₂": "622e", "xmark": "bbf0", "xroot": "f1", "xyLine": "fd", "x̄": "6203", "x̄2": "622e", "x̄₁": "622b", "x̄₂": "622e", "x₁": "621b", "x₂": "621c", "x₃": "621d", "y": "bbc9", "y₁": "621e", "y₂": "621f", "y₃": "6220", "z": "bbca", "{": "08", "{X1T}": "5e20", "{X2T}": "5e22", "{X3T}": "5e24", "{X4T}": "5e26", "{X5T}": "5e28", "{X6T}": "5e2a", "{Y0}": "5e19", "{Y1T}": "5e21", "{Y1}": "5e10", "{Y2T}": "5e23", "{Y2}": "5e11", "{Y3T}": "5e25", "{Y3}": "5e12", "{Y4T}": "5e27", "{Y4}": "5e13", "{Y5T}": "5e29", "{Y5}": "5e14", "{Y6T}": "5e2b", "{Y6}": "5e15", "{Y7}": "5e16", "{Y8}": "5e17", "{Y9}": "5e18", "{r1}": "5e40", "{r2}": "5e41", "{r3}": "5e42", "{r4}": "5e43", "{r5}": "5e44", "{r6}": "5e45", "|": "bbd8", "|!": "bb9e", "|'": "bb9a", "|-": "b0", "|:": "bb9c", "|<": "bbdc", "|>": "bbec", "|?": "bb9d", "|C/Y": "6331", "|E": "3b", "|F": "bbaf", "|L": "eb", "|N": "632b", "|P/Y": "6330", "|`": "bb9b", "|u": "5e80", "|v": "5e81", "|w": "5e82", "|~": "bbcf", "|π": "bba7", "|𝐅": "bbaf", "|𝗡": "632b", "}": "09", "~": "b0", "¡": "bb9e", "¨": "bb9c", "°": "0b", "²": "0d", "³": "0f", "³√(": "bd", "´": "bb9a", "¿": "bb9d", "À": "bb6f", "Á": "bb6e", "Â": "bb70", "Ä": "bb71", "Ç": "bb96", "È": "bb77", "É": "bb76", "Ê": "bb78", "Ë": "bb79", "Ì": "bb7f", "Í": "bbcd", "Î": "bb80", "Ï": "bb81", "Ñ": "bb98", "Ò": "bb87", "Ó": "bb86", "Ô": "bb88", "Ö": "bb89", "×": "bbf0", "Ù": "bb8f", "Ú": "bb8e", "Û": "bb90", "Ü": "bb91", "ß": "bbdd", "à": "bb73", "á": "bb72", "â": "bb74", "ä": "bb75", "ç": "bb97", "è": "bb7b", "é": "bb7a", "ê": "bb7c", "ë": "bb7d", "ì": "bb83", "í": "bb82", "î": "bb84", "ï": "bb85", "ñ": "bb99", "ò": "bb8b", "ó": "bb8a", "ô": "bb8c", "ö": "bb8d", "ù": "bb93", "ú": "bb92", "û": "bb94", "ü": "bb95", "ȳ": "620c", "ʟ": "eb", "ʳ": "0a", "ˉ¹": "0c", "ˣ": "bbde", "ˣ√": "f1", "Δ": "bba2", "ΔList(": "bb2c", "ΔTbl": "6321", "ΔX": "6326", "ΔY": "6327", "Σ": "bba9", "Σ(": "ef33", "ΣInt(": "bb04", "ΣPrn(": "bb03", "Σx": "6204", "Σx^2": "6205", "Σxy": "6211", "Σx²": "6205", "Σy": "620d", "Σy^2": "620e", "Σy²": "620e", "Φ": "bbab", "Ω": "bbac", "α": "bb9f", "β": "bba0", "γ": "bba1", "δ": "bba3", "ε": "bba4", "θ": "5b", "θMax": "6311", "θMin": "6310", "θmax": "6311", "θmin": "6310", "θstep": "6323", "λ": "bba5", "μ": "bba6", "ρ": "bba8", "σ": "bbcb", "σx": "6207", "σy": "6210", "τ": "bbcc", "χ": "bbae", "χ^2": "6225", "χ^2-Test(": "bb40", "χ^2GOF-Test(": "ef14", "χ^2cdf(": "bb13", "χ^2pdf(": "bb1d", "χ²": "6225", "χ²-Test(": "bb40", "χ²GOF-Test(": "ef14", "χ²cdf(": "bb13", "χ²pdf(": "bb1d", "ᴇ": "3b", "ᴛ": "bbdf", "ᵀ": "0e", "ᵤ": "ef2f", "ṗ": "bbad", "ṗ1": "6229", "ṗ2": "622a", "ṗ₁": "6229", "ṗ₂": "622a", "ẋ": "6203", "ẋ1": "622b", "ẋ2": "622e", "ẋ₁": "622b", "ẋ₂": "622e", "“": "2a", "”": "2a", "…": "bbdb", "⁄": "ef2e", "⁻": "b0", "⁻¹": "0c", "₀": "bbe0", "₁": "bbe1", "₁₀": "bbea", "₁₀^(": "c1", "₂": "bbe2", "₃": "bbe3", "₄": "bbe4", "₅": "bbe5", "₆": "bbe6", "₇": "bbe7", "₈": "bbe8", "₉": "bbe9", "↑": "bbed", "→": "04", "↓": "bbee", "∆Tbl": "6321", "∆X": "6326", "∆Y": "6327", "√(": "bc", "∠": "bbdc", "∫": "bbf1", "≠": "6f", "≤": "6d", "≥": "6e", "⌊": "eb", "⌸": "bbf5", "□": "7f", "►": "bbec", "►DMS": "01", "►Dec": "02", "►Eff(": "bb06", "►Frac": "03", "►F◄►D": "ef31", "►Nom(": "bb05", "►Polar": "bb30", "►Rect": "bb2f", "►n/d◄►Un/d": "ef30", "►n⁄d◄►Un⁄d": "ef30", "◄": "bbeb", "⬚": "ef1e", "﹢": "80", "𝐅": "bbaf", "𝐅cdf(": "bb14", "𝐅pdf(": "bb1e", "𝑒": "bb31", "𝑒^(": "bf", "𝑖": "2c", "𝑛": "6221", "𝑛Max": "631d", "𝑛Min": "631f", "𝒏Max": "631d", "𝒏Min": "631f", "𝗡": "632b", "𝙵cdf(": "bb14", "𝙵pdf(": "bb1e", "🠿": "bbf3", "🡁": "bbf2", "🡅": "bbf2", "🡇": "bbf3", "󸏵": "ef2f"}</script>
+<script id="programs" type="application/json">{"QUADFORM": "// QUADFORM -- solve A*X^2 + B*X + C = 0, and analyse the parabola\n//\n// Read this file alongside docs/02-ti84-basic.md. Three things here are\n// not TI-BASIC and exist only because you are editing on a PC:\n//\n//   * lines starting with // are stripped before tokenizing\n//   * indentation is stripped too (a leading space is a real token on\n//     the handheld and would cost a real byte)\n//   * sqrt() is an ASCII stand-in for the square-root symbol\n//\n// COMMENTS ARE FREE. This header is 647 characters and costs the\n// calculator exactly 0 bytes -- measured, not assumed. Never delete a\n// comment to save space; delete a parenthesis instead.\n//\n// One thing here IS TI-BASIC and catches everyone once: ~ is negation,\n// the (-) key. A plain - is subtraction, always. Writing -B would encode\n// as \"subtract B from nothing\" and raise ERR:SYNTAX on the calculator.\n//\n// BYTE NOTES, since this has to stay small:\n//   2A     implicit multiplication, 1 byte cheaper than 2*A\n//   ^^2    the single-byte squared token, vs ^2 which is two\n//   \"TEXT  a closing quote is optional at end of line, 1 byte each\n//   ()     every paren is a real byte -- only write the ones that change\n//          the answer\n\n// WHY: a TI-BASIC program inherits whatever the last program left in\n// A-Z. Without this, the first run reads someone else's O and M.\n1->O\n0->M\n\nLbl 0\nDisp \"MODE:\",O,\"COMPLEX:\",M\nMenu(\"MAIN MENU\",\"PARABOLA ORIENTATION\",1,\"TOGGLE COMPLEX MODE\",2,\"ENTER COEFFICIENTS\",3,\"CALCULATE\",4,\"QUIT\",5)\n\nLbl 1\nIf O=1\nThen\n  2->O\nElse\n  1->O\nEnd\nGoto 0\n\nLbl 2\n1-M->M\nGoto 0\n\nLbl 3\nClrHome\nDisp \"A,B,C\nPrompt A,B,C\nGoto 0\n\nLbl 4\n  If A=0\n  Then\n    Disp \"NOT QUADRATIC\n    Stop\n  End\n\n  B^^2-4A*C->D\n\n  If D<0\n  Then\n    If M=1\n    Then\n      Disp \"COMPLEX ROOTS\n      ~B/(2A)->R\n      sqrt(~D)/(2A)->I\n      Disp \"REAL PART\",R►Frac\n      Disp \"IMAG PART\",I►Frac\n    Else\n      Disp \"NO REAL ROOTS\n      Stop\n    End\n  End\n\n  (~B+sqrt(D))/(2A)->X\n  (~B-sqrt(D))/(2A)->Y\n  Disp \"ROOT 1\",X►Frac\n  Disp \"ROOT 2\",Y►Frac\n\n  ~B/(2A)->H\n  C-B^^2/(4A)->K\n\n  Disp \"VERTEX\n  Disp \"x=\",H\n  Disp \"y=\",K\n\n  1/(4A)->P\n\n  If O=1\n  Then\n    Disp \"DIRECTION\n    If A>0\n    Then\n      Disp \"UP\n    End\n    If A<0\n    Then\n      Disp \"DOWN\n    End\n\n    Disp \"AXIS OF SYMM\n    Disp \"x=\",H\n\n    Disp \"FOCAL DISTANCE\",P\n\n    Disp \"FOCAL POINT\n    Disp \"x=\",H\n    Disp \"y=\",K+P\n\n    Disp \"DIRECTRIX\n    Disp \"y=\",K-P\n\n    Disp \"Y-INT\",C\n  Else\n    Disp \"DIRECTION\n    If A>0\n    Then\n      Disp \"RIGHT\n    End\n    If A<0\n    Then\n      Disp \"LEFT\n    End\n\n    Disp \"AXIS OF SYMM\n    Disp \"x=\",K\n\n    Disp \"FOCAL DISTANCE\",P\n\n    Disp \"FOCAL POINT\n    Disp \"x=\",H+P\n    Disp \"y=\",K\n\n    Disp \"DIRECTRIX\n    Disp \"x=\",H-P\n\n    Disp \"X-INT\",C\n  End\nGoto 0\n\nLbl 5\nStop\n", "TRIANGLE": "// TRIANGLE -- solve a triangle from SSS or SAS\n//\n// This one exists to show the shape of a menu-driven program, which is\n// how most useful TI-BASIC tools are built.\n//\n// Menu( jumps straight to a label -- there is no Goto involved, and no\n// \"return\" either. Every branch must end in Stop or the program falls\n// through into whatever code physically follows it. That fall-through\n// is the single most common bug in menu programs.\n//\n// Note also that the angle mode is the user's, not yours: cos( means\n// degrees or radians depending on a setting you cannot see. Degree\n// works around it by forcing degrees for one expression.\n\nClrHome\nMenu(\"TRIANGLE\",\"SSS - THREE SIDES\",S,\"SAS - TWO AND ANGLE\",T,\"QUIT\",Q)\n\n// ---- three sides known ----\nLbl S\nDisp \"SIDES A,B,C\"\nPrompt A,B,C\nIf A+B<=C or A+C<=B or B+C<=A\nThen\n  Disp \"NOT A TRIANGLE\"\n  Stop\nEnd\n(A+B+C)/2->P\nsqrt(P(P-A)(P-B)(P-C))->E\ncos^-1((B^2+C^2-A^2)/(2B*C))->F\nDisp \"AREA\",E\nDisp \"ANGLE A\",F\nStop\n\n// ---- two sides and the angle between them ----\nLbl T\nDisp \"SIDES A,B\"\nPrompt A,B\nDisp \"ANGLE C BETWEEN\"\nPrompt C\nsqrt(A^2+B^2-2A*B*cos(C))->G\n.5A*B*sin(C)->E\nDisp \"SIDE C\",G\nDisp \"AREA\",E\nStop\n\nLbl Q\nClrHome\n"}</script>
+<script>/* A TI-84 Plus CE interpreter, ported from tools/simulate_84.py.
+ *
+ * There are deliberately two implementations. The Python one is the
+ * reference -- it shares its scanner with the builder, so it sees exactly
+ * the token stream that gets written into the .8xp. This one exists so the
+ * browser can run a program interactively, and web/test_ti84.mjs checks the
+ * two agree on a fixed set of programs. If they ever disagree, the Python
+ * one is right.
+ *
+ * Execution is a generator. TI-BASIC blocks on Prompt, Input, Menu( and
+ * Pause; a browser cannot block, so the interpreter yields a request and
+ * the caller resumes it with the answer. That also gives single-stepping
+ * for free.
+ *
+ * Runs in node (module.exports) and in the browser (window.TI84).
+ */
+(function (root) {
+  "use strict";
+
+  var COLS = 26, ROWS = 10;
+  var NARROW_COLS = 16, NARROW_ROWS = 8;
+  var SEPARATORS = { 0x3f: 1, 0x3e: 1 };
+  var OPENERS = { "Then": 1, "For(": 1, "While ": 1, "Repeat ": 1 };
+  var LOWER = "abcdefghijklmnopqrstuvwxyz";
+  var LABEL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789θ";
+  var VARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZθ";
+
+  /* ---- errors ---------------------------------------------------- */
+
+  function TIError(name, detail) {
+    this.name = name;
+    this.detail = detail || "";
+    this.message = "ERR:" + name + (detail ? "  (" + detail + ")" : "");
+  }
+  TIError.prototype = Object.create(Error.prototype);
+
+  function Unsupported(message) {
+    this.name = "Unsupported";
+    this.message = message;
+  }
+  Unsupported.prototype = Object.create(Error.prototype);
+
+  /* ---- ►Frac ----------------------------------------------------- */
+
+  /* Tagged so Disp still right-aligns it: on screen it is a number, even
+   * though it is carried as text. */
+  function Frac(text) { this.text = text; }
+  Frac.prototype.toString = function () { return this.text; };
+
+  function toFrac(value) {
+    if (typeof value !== "number") return value;
+    // Stern-Brocot search, stopping at the denominator the handheld
+    // stops at. Past that it gives up and leaves the decimal, and
+    // reproducing the giving up is the point: a root shown as
+    // .3333333333 is how you learn your arithmetic went through a float.
+    var sign = value < 0 ? -1 : 1, x = Math.abs(value);
+    var lo = [0, 1], hi = [1, 0], best = null;
+    for (var i = 0; i < 64; i++) {
+      var mid = [lo[0] + hi[0], lo[1] + hi[1]];
+      if (mid[1] > 9999) break;
+      var v = mid[0] / mid[1];
+      if (Math.abs(v - x) < 1e-9) { best = mid; break; }
+      if (v < x) lo = mid; else hi = mid;
+    }
+    if (!best) return value;
+    if (best[1] === 1) return sign * best[0];
+    return new Frac((sign * best[0]) + "/" + best[1]);
+  }
+
+  /* ---- number formatting ----------------------------------------- */
+
+  function tiStr(value) {
+    if (value instanceof Frac) return value.text;
+    if (typeof value === "string") return value;
+    if (value !== value) return "NAN";
+    if (value === Infinity || value === -Infinity) return "INF";
+
+    var text;
+    if (value === Math.trunc(value) && Math.abs(value) < 1e10) {
+      text = String(Math.trunc(value));
+    } else {
+      text = significant(value, 10);
+      if (text.indexOf("e") >= 0) {
+        var parts = text.split("e");
+        return parts[0] + "E" + parseInt(parts[1], 10);
+      }
+    }
+    // TI drops the leading zero: .5, never 0.5
+    if (text.indexOf("0.") === 0) text = text.slice(1);
+    else if (text.indexOf("-0.") === 0) text = "-" + text.slice(2);
+    return text;
+  }
+
+  function significant(value, digits) {
+    var text = value.toPrecision(digits);
+    if (text.indexOf("e") < 0 && text.indexOf(".") >= 0) {
+      text = text.replace(/0+$/, "").replace(/\.$/, "");
+    }
+    return text;
+  }
+
+  /* ---- screen ----------------------------------------------------- */
+
+  function Screen(cols, rows) {
+    this.cols = cols || COLS;
+    this.rows = rows || ROWS;
+    this.truncated = [];
+    this.clear();
+  }
+  Screen.prototype.clear = function () {
+    this.grid = [];
+    for (var r = 0; r < this.rows; r++) this.grid.push(new Array(this.cols).fill(" "));
+    this.cursor = 0;
+  };
+  Screen.prototype.scroll = function () {
+    this.grid.shift();
+    this.grid.push(new Array(this.cols).fill(" "));
+    this.cursor = this.rows - 1;
+  };
+  Screen.prototype.write = function (text, row, col, right) {
+    col = col || 0;
+    if (row === null || row === undefined) {
+      if (this.cursor >= this.rows) this.scroll();
+      row = this.cursor;
+      this.cursor += 1;
+    }
+    if (text.length > this.cols - col) {
+      this.truncated.push(text);
+      text = text.slice(0, this.cols - col);
+    }
+    if (right) col = Math.max(0, this.cols - text.length);
+    for (var i = 0; i < text.length; i++) {
+      if (col + i >= 0 && col + i < this.cols) this.grid[row][col + i] = text[i];
+    }
+  };
+  Screen.prototype.lines = function () {
+    return this.grid.map(function (row) { return row.join(""); });
+  };
+
+  /* ---- scanner ---------------------------------------------------- */
+
+  function Scanner(table) {
+    this.table = table;
+    this.maxlen = 0;
+    for (var name in table) {
+      if (name.length > this.maxlen) this.maxlen = name.length;
+    }
+  }
+  Scanner.prototype.has = function (name) {
+    return Object.prototype.hasOwnProperty.call(this.table, name);
+  };
+  Scanner.prototype.bits = function (name) {
+    return this.has(name) ? this.table[name] : "";
+  };
+  Scanner.prototype.byte = function (name) {
+    var hex = this.bits(name);
+    return hex.length === 2 ? parseInt(hex, 16) : -1;
+  };
+  Scanner.prototype.scan = function (text) {
+    var out = [], i = 0, line = 1, col = 1, n = text.length;
+    while (i < n) {
+      var ch = text[i];
+      if (ch === "\n") {
+        out.push({ kind: "tok", text: "\n", line: line, col: col });
+        i++; line++; col = 1;
+        continue;
+      }
+      if (ch === '"') {
+        // A string runs to the next quote or to end of line: TI closes an
+        // unterminated string at the newline, so a missing quote is legal.
+        var j = i + 1;
+        while (j < n && text[j] !== '"' && text[j] !== "\n") j++;
+        var end = (j < n && text[j] === '"') ? j + 1 : j;
+        out.push({ kind: "str", text: text.slice(i, end), line: line, col: col });
+        col += end - i; i = end;
+        continue;
+      }
+      var matched = false;
+      var limit = Math.min(this.maxlen, n - i);
+      for (var len = limit; len >= 1; len--) {
+        var cand = text.substr(i, len);
+        if (cand.indexOf("\n") >= 0) continue;
+        if (this.has(cand)) {
+          out.push({ kind: "tok", text: cand, line: line, col: col });
+          i += len; col += len; matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        out.push({ kind: "unk", text: ch, line: line, col: col });
+        i++; col++;
+      }
+    }
+    return out;
+  };
+
+  /* ---- preprocess ------------------------------------------------- */
+
+  function preprocess(text, scanner) {
+    var lines = text.replace(/\r\n/g, "\n").split("\n");
+    var out = [], map = [];
+    for (var n = 0; n < lines.length; n++) {
+      var raw = lines[n];
+      if (/^\s*\/\//.test(raw)) continue;
+      var line = raw.trim();
+      if (!line) continue;
+      out.push(restoreBareCommand(line, scanner));
+      map.push(n + 1);
+    }
+    return { text: out.join("\n") + "\n", map: map };
+  }
+
+  /* Most token names carry their trailing space: the token is `Pause `,
+   * not `Pause`. Stripping indentation also strips that space, so a bare
+   * Pause would scan as P, a, u, s, e. Put it back. */
+  function restoreBareCommand(line, scanner) {
+    var match = /([A-Za-z]+)$/.exec(line);
+    if (!match) return line;
+    var word = match[1];
+    if (!scanner.has(word) && scanner.has(word + " ")) return line + " ";
+    return line;
+  }
+
+  /* ---- statements ------------------------------------------------- */
+
+  function splitStatements(tokens, scanner) {
+    var statements = [], current = [];
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (t.kind === "tok" && SEPARATORS[scanner.byte(t.text)]) {
+        statements.push(current); current = [];
+      } else {
+        current.push(t);
+      }
+    }
+    statements.push(current);
+    return statements.filter(function (s) { return s.length > 0; });
+  }
+
+  function matchBlocks(statements) {
+    var ends = {}, elses = {}, stack = [];
+    for (var i = 0; i < statements.length; i++) {
+      var head = statements[i][0].text;
+      if (OPENERS[head]) stack.push(i);
+      else if (head === "Else") {
+        if (!stack.length) throw new TIError("SYNTAX", "Else with no If");
+        elses[stack[stack.length - 1]] = i;
+      } else if (head === "End") {
+        if (!stack.length) throw new TIError("SYNTAX", "End with no open block");
+        ends[stack.pop()] = i;
+      }
+    }
+    if (stack.length) throw new TIError("SYNTAX", "unclosed block");
+    return { ends: ends, elses: elses };
+  }
+
+  /* ---- expressions ------------------------------------------------ */
+
+  function Parser(tokens, machine) {
+    this.tokens = tokens; this.machine = machine; this.pos = 0;
+  }
+  Parser.prototype.peek = function () { return this.tokens[this.pos] || null; };
+  Parser.prototype.name = function () { var t = this.peek(); return t ? t.text : null; };
+  Parser.prototype.take = function () { return this.tokens[this.pos++]; };
+  Parser.prototype.atEnd = function () { return this.pos >= this.tokens.length; };
+  Parser.prototype.accept = function () {
+    var here = this.name();
+    for (var i = 0; i < arguments.length; i++) {
+      if (here === arguments[i]) { this.pos++; return here; }
+    }
+    return null;
+  };
+  Parser.prototype.num = function (value, where) {
+    if (typeof value === "string" || value instanceof Frac) {
+      throw new TIError("DATA TYPE", where + " got text");
+    }
+    return value;
+  };
+
+  Parser.prototype.expr = function () {
+    var left = this.andExpr(), op;
+    while ((op = this.accept(" or ", " xor ")) !== null) {
+      var right = this.andExpr();
+      left = op === " or " ? (left || right ? 1 : 0) : ((!!left !== !!right) ? 1 : 0);
+    }
+    return left;
+  };
+  Parser.prototype.andExpr = function () {
+    var left = this.rel();
+    while (this.accept(" and ") !== null) left = (left && this.rel()) ? 1 : 0;
+    return left;
+  };
+  Parser.prototype.rel = function () {
+    var left = this.add(), op;
+    while ((op = this.accept("=", "<", ">", "<=", "≤", ">=", "≥", "!=", "≠")) !== null) {
+      var right = this.add();
+      if (op === "=") left = left === right ? 1 : 0;
+      else if (op === "<") left = left < right ? 1 : 0;
+      else if (op === ">") left = left > right ? 1 : 0;
+      else if (op === "<=" || op === "≤") left = left <= right ? 1 : 0;
+      else if (op === ">=" || op === "≥") left = left >= right ? 1 : 0;
+      else left = left !== right ? 1 : 0;
+    }
+    return left;
+  };
+  Parser.prototype.add = function () {
+    var left = this.mul(), op;
+    while ((op = this.accept("+", "-")) !== null) {
+      var right = this.mul();
+      if (op === "+") {
+        var ls = typeof left === "string", rs = typeof right === "string";
+        if (ls || rs) {
+          if (!(ls && rs)) throw new TIError("DATA TYPE", "string + number");
+          left = left + right;
+        } else left = left + right;
+      } else {
+        left = this.num(left, "-") - this.num(right, "-");
+      }
+    }
+    return left;
+  };
+  Parser.prototype.mul = function () {
+    var left = this.unary(), op;
+    for (;;) {
+      op = this.accept("*", "/");
+      if (op !== null) {
+        var right = this.unary();
+        if (op === "*") left = this.num(left, "*") * this.num(right, "*");
+        else {
+          if (this.num(right, "/") === 0) throw new TIError("DIVIDE BY 0");
+          left = this.num(left, "/") / right;
+        }
+        continue;
+      }
+      // Implicit multiplication: 2A, 2(X+1), A(B+C). Also where a
+      // mistyped ALL-CAPS command lands -- MENU( scans as M*E*N*U*(...).
+      if (this.startsValue()) {
+        // Guard: if the factor consumed no tokens we would spin here
+        // forever. Turn that into a diagnosable error rather than a hang.
+        var before = this.pos;
+        var factor = this.unary();
+        if (this.pos === before) {
+          throw new Unsupported(
+            "parser made no progress at " + JSON.stringify(this.name()));
+        }
+        left = this.num(left, "implicit *") * this.num(factor, "implicit *");
+        continue;
+      }
+      return left;
+    }
+  };
+  Parser.prototype.startsValue = function () {
+    var t = this.peek();
+    if (!t || t.kind === "str") return false;
+    var text = t.text;
+    if (text === "(") return true;
+    if (text.length === 1 && (/[0-9]/.test(text) || VARS.indexOf(text) >= 0)) return true;
+    if (text === "pi" || text === "π" || text === "e" || text === "Ans" || text === "rand") return true;
+    return text.length > 1 && text.slice(-1) === "(";
+  };
+  Parser.prototype.unary = function () {
+    if (this.accept("~", "⁻", "|-") !== null) return -this.num(this.unary(), "negation");
+    return this.power();
+  };
+  Parser.prototype.power = function () {
+    var base = this.atom();
+    if (this.accept("^") !== null) base = Math.pow(this.num(base, "^"), this.num(this.unary(), "^"));
+    else if (this.accept("²", "^^2") !== null) base = Math.pow(this.num(base, "squared"), 2);
+    for (;;) {
+      if (this.accept("►Frac", ">Frac") !== null) base = toFrac(base);
+      else if (this.accept("►Dec", ">Dec") !== null) base = (base instanceof Frac) ? Number(base.text.split("/")[0]) / Number(base.text.split("/")[1]) : base;
+      else return base;
+    }
+  };
+  Parser.prototype.atom = function () {
+    var t = this.peek();
+    if (!t) throw new TIError("SYNTAX", "expression ended early");
+    var text = t.text;
+
+    if (t.kind === "str") { this.take(); return text.replace(/"/g, ""); }
+    if (text === "(") {
+      this.take();
+      var value = this.expr();
+      this.accept(")");            // closing paren optional, as on TI
+      return value;
+    }
+    // ANCHORED. Unanchored, this matches any multi-character token that
+    // happens to contain a digit -- `cos^-1(`, `10^(` -- which routes a
+    // function into the number parser, consumes nothing, and hangs the
+    // implicit-multiplication loop below. Python's .isdigit() is false
+    // for those, which is why only this port had the bug.
+    if (/^[0-9]$/.test(text) || text === ".") return this.number();
+    if (text.length > 1 && text.slice(-1) === "(") return this.call();
+    if (text === "pi" || text === "π") { this.take(); return Math.PI; }
+    if (text === "e") { this.take(); return Math.E; }
+    if (text === "Ans") { this.take(); return this.machine.ans; }
+    if (text.indexOf("Str") === 0) { this.take(); return this.machine.strings[text] || ""; }
+    if (text.length === 1 && VARS.indexOf(text) >= 0) {
+      this.take();
+      return this.machine.vars[text] || 0;
+    }
+    throw new Unsupported("cannot evaluate token " + JSON.stringify(text));
+  };
+  Parser.prototype.number = function () {
+    var digits = "";
+    while (!this.atEnd()) {
+      var text = this.name();
+      if (text !== null && (/^[0-9]$/.test(text) || text === ".")) digits += this.take().text;
+      else break;
+    }
+    return digits ? parseFloat(digits) : 0;
+  };
+  Parser.prototype.call = function () {
+    var fn = this.take().text, args = [];
+    if (!this.atEnd() && this.name() !== ")") {
+      args.push(this.expr());
+      while (this.accept(",") !== null) args.push(this.expr());
+    }
+    this.accept(")");
+    var a = args.length ? args[0] : 0, m = this.machine;
+
+    switch (fn) {
+      case "sqrt(": case "√(":
+        if (a < 0) throw new TIError("NONREAL ANS");
+        return Math.sqrt(a);
+      case "abs(": return Math.abs(a);
+      case "int(": return Math.floor(a);
+      case "iPart(": return Math.trunc(a);
+      case "fPart(": return a - Math.trunc(a);
+      case "round(": {
+        var d = args.length > 1 ? args[1] : 9;
+        var f = Math.pow(10, d);
+        return Math.round(a * f) / f;
+      }
+      case "gcd(": return gcd(Math.abs(Math.trunc(a)), Math.abs(Math.trunc(args[1])));
+      case "lcm(": {
+        var g = gcd(Math.abs(Math.trunc(a)), Math.abs(Math.trunc(args[1])));
+        return g ? Math.abs(Math.trunc(a) * Math.trunc(args[1])) / g : 0;
+      }
+      case "remainder(": return Math.trunc(a) % Math.trunc(args[1]);
+      case "max(": return Math.max(a, args[1]);
+      case "min(": return Math.min(a, args[1]);
+      case "not(": return a ? 0 : 1;
+      case "length(": return String(a).length;
+      case "sub(": return String(a).substr(args[1] - 1, args[2]);
+      case "inString(": return String(a).indexOf(String(args[1]), args.length > 2 ? args[2] - 1 : 0) + 1;
+      case "toString(": return tiStr(a);
+      case "sin(": return Math.sin(m.degrees ? a * Math.PI / 180 : a);
+      case "cos(": return Math.cos(m.degrees ? a * Math.PI / 180 : a);
+      case "tan(": return Math.tan(m.degrees ? a * Math.PI / 180 : a);
+      case "sin^-1(": case "asin(": case "arcsin(": case "sin⁻¹(":
+        return degIf(m, Math.asin(a));
+      case "cos^-1(": case "acos(": case "arccos(": case "cos⁻¹(":
+        return degIf(m, Math.acos(a));
+      case "tan^-1(": case "atan(": case "arctan(": case "tan⁻¹(":
+        return degIf(m, Math.atan(a));
+      case "ln(": return Math.log(a);
+      case "log(": return Math.log10(a);
+      case "e^(": return Math.exp(a);
+      case "10^(": return Math.pow(10, a);
+    }
+    throw new Unsupported("function " + fn + " is not implemented");
+  };
+  function degIf(machine, radians) {
+    return machine.degrees ? radians * 180 / Math.PI : radians;
+  }
+  function gcd(a, b) { while (b) { var t = b; b = a % b; a = t; } return a; }
+
+  /* ---- machine ---------------------------------------------------- */
+
+  function Machine(scanner, screen) {
+    this.scanner = scanner;
+    this.screen = screen;
+    this.vars = {};
+    this.strings = {};
+    this.ans = 0;
+    this.degrees = false;
+    this.steps = 0;
+  }
+  Machine.prototype.alignsRight = function (value) {
+    return (value instanceof Frac) || typeof value !== "string";
+  };
+  Machine.prototype.assign = function (name, value) {
+    if (name.indexOf("Str") === 0) this.strings[name] = value;
+    else this.vars[name] = value;
+    this.ans = value;
+  };
+  Machine.prototype.evaluate = function (tokens) {
+    return new Parser(tokens, this).expr();
+  };
+  Machine.prototype.arglist = function (tokens, wantName) {
+    var p = new Parser(tokens, this), args = [];
+    if (p.atEnd()) return args;
+    if (wantName) { args.push(p.take().text); p.accept(","); }
+    args.push(p.expr());
+    while (p.accept(",") !== null) args.push(p.expr());
+    return args;
+  };
+  Machine.prototype.labelOf = function (statement) {
+    var out = "";
+    for (var i = 1; i < statement.length && out.length < 2; i++) {
+      var t = statement[i];
+      if (t.kind === "tok" && t.text.length === 1 && LABEL_CHARS.indexOf(t.text) >= 0) out += t.text;
+      else break;
+    }
+    return out;
+  };
+  Machine.prototype.sourceOf = function (statement) {
+    return statement.map(function (t) { return t.text; }).join("");
+  };
+
+  /* The interpreter. Yields {type:"input"|"pause"|"menu"|"step"} whenever
+   * it needs the outside world, and is resumed with the answer. */
+  Machine.prototype.run = function* (source, options) {
+    options = options || {};
+    var pre = preprocess(source, this.scanner);
+    var tokens = this.scanner.scan(pre.text);
+
+    for (var t = 0; t < tokens.length; t++) {
+      if (tokens[t].kind === "unk") {
+        throw new TIError("SYNTAX", "no token matches " + JSON.stringify(tokens[t].text));
+      }
+    }
+
+    var statements = splitStatements(tokens, this.scanner);
+    var blocks = matchBlocks(statements);
+    var labels = {};
+    for (var i = 0; i < statements.length; i++) {
+      if (statements[i][0].text === "Lbl ") labels[this.labelOf(statements[i])] = i;
+    }
+
+    var loops = [], pc = 0, machine = this;
+    while (pc < statements.length) {
+      this.steps++;
+      if (this.steps > 200000) throw new TIError("BREAK", "200,000 steps -- probably an infinite loop");
+
+      var statement = statements[pc];
+      var head = statement[0].text;
+      var origLine = pre.map[statement[0].line - 1] || statement[0].line;
+
+      if (options.step) {
+        yield { type: "step", pc: pc, line: origLine, source: this.sourceOf(statement) };
+      }
+
+      var next = yield* this.step(statement, head, pc, statements, blocks, labels, loops);
+      if (next === null) return;
+      pc = next;
+    }
+  };
+
+  Machine.prototype.step = function* (statement, head, pc, statements, blocks, labels, loops) {
+    var rest = statement.slice(1), i, args, value;
+    var ends = blocks.ends, elses = blocks.elses;
+
+    if (head === "ClrHome") { this.screen.clear(); return pc + 1; }
+
+    if (head === "Disp ") {
+      args = this.arglist(rest);
+      for (i = 0; i < args.length; i++) {
+        this.screen.write(tiStr(args[i]), null, 0, this.alignsRight(args[i]));
+      }
+      return pc + 1;
+    }
+
+    if (head === "Output(") {
+      args = this.arglist(rest);
+      this.screen.write(tiStr(args[2]), args[0] - 1, args[1] - 1, false);
+      return pc + 1;
+    }
+
+    if (head === "Pause ") {
+      if (rest.length) {
+        args = this.arglist(rest);
+        for (i = 0; i < args.length; i++) {
+          this.screen.write(tiStr(args[i]), null, 0, this.alignsRight(args[i]));
+        }
+      }
+      yield { type: "pause" };
+      return pc + 1;
+    }
+
+    if (head === "Prompt ") {
+      for (i = 0; i < rest.length; i++) {
+        if (rest[i].text === ",") continue;
+        var name = rest[i].text;
+        var answer = yield { type: "input", prompt: name + "=?", variable: name };
+        this.assign(name, parseFloat(answer) || 0);
+      }
+      return pc + 1;
+    }
+
+    if (head === "Input ") {
+      var prompt = "?", index = 0;
+      if (rest.length && rest[0].kind === "str") {
+        prompt = rest[0].text.replace(/"/g, "");
+        index = rest.length > 1 ? 2 : 1;
+      }
+      var target = rest[index] ? rest[index].text : "X";
+      var got = yield { type: "input", prompt: prompt, variable: target };
+      if (target.indexOf("Str") === 0) this.strings[target] = got;
+      else this.assign(target, parseFloat(got) || 0);
+      return pc + 1;
+    }
+
+    if (head === "If ") {
+      var condition = this.evaluate(rest);
+      var following = statements[pc + 1];
+      if (following && following[0].text === "Then") {
+        if (condition) return pc + 2;
+        var target2 = elses[pc + 1];
+        return target2 !== undefined ? target2 + 1 : ends[pc + 1] + 1;
+      }
+      return condition ? pc + 1 : pc + 2;
+    }
+
+    if (head === "Then") return pc + 1;
+
+    if (head === "Else") return ends[this.openerOf(pc, statements)] + 1;
+
+    if (head === "For(") {
+      args = this.arglist(rest, true);
+      var vname = args[0], start = args[1], stop = args[2];
+      var stepBy = args.length > 3 ? args[3] : 1;
+      this.assign(vname, start);
+      if ((stepBy > 0 && start > stop) || (stepBy < 0 && start < stop)) return ends[pc] + 1;
+      loops.push({ kind: "For(", start: pc, name: vname, stop: stop, step: stepBy });
+      return pc + 1;
+    }
+
+    if (head === "While ") {
+      if (this.evaluate(rest)) {
+        loops.push({ kind: "While ", start: pc, cond: rest });
+        return pc + 1;
+      }
+      return ends[pc] + 1;
+    }
+
+    if (head === "Repeat ") {
+      loops.push({ kind: "Repeat ", start: pc, cond: rest });
+      return pc + 1;
+    }
+
+    if (head === "End") {
+      if (!loops.length) return pc + 1;
+      var loop = loops[loops.length - 1];
+      if (ends[loop.start] !== pc) return pc + 1;
+      if (loop.kind === "For(") {
+        this.vars[loop.name] = (this.vars[loop.name] || 0) + loop.step;
+        var now = this.vars[loop.name];
+        if ((loop.step > 0 && now <= loop.stop) || (loop.step < 0 && now >= loop.stop)) {
+          return loop.start + 1;
+        }
+        loops.pop();
+        return pc + 1;
+      }
+      if (loop.kind === "While ") {
+        if (this.evaluate(loop.cond)) return loop.start + 1;
+        loops.pop();
+        return pc + 1;
+      }
+      if (this.evaluate(loop.cond)) { loops.pop(); return pc + 1; }  // Repeat exits when TRUE
+      return loop.start + 1;
+    }
+
+    if (head === "Lbl ") return pc + 1;
+
+    if (head === "Goto ") {
+      var label = this.labelOf(statement);
+      if (!(label in labels)) throw new TIError("LABEL", "no Lbl " + label);
+      loops.length = 0;      // TI leaks here; we simply drop it
+      return labels[label];
+    }
+
+    if (head === "Stop" || head === "Return") return null;
+
+    if (head === "DelVar ") { delete this.vars[rest[0].text]; return pc + 1; }
+
+    if (head === "Menu(") {
+      var options = this.menuOptions(rest);
+      var choice = yield { type: "menu", options: options.map(function (o) { return o.text; }) };
+      var picked = options[choice];
+      if (!picked || !(picked.label in labels)) {
+        throw new TIError("LABEL", "no Lbl " + (picked ? picked.label : "?"));
+      }
+      return labels[picked.label];
+    }
+
+    if (head === "Degree" || head === "Radian") {
+      this.degrees = head === "Degree";
+      return pc + 1;
+    }
+
+    if (head === "Wait ") return pc + 1;
+
+    // Not a command, so an expression -- possibly a store.
+    var parser = new Parser(statement, this);
+    value = parser.expr();
+    if (parser.accept("->", "→") !== null) {
+      var dest = parser.take().text;
+      if (dest.indexOf("Str") === 0) this.strings[dest] = value;
+      else this.assign(dest, value);
+    } else {
+      this.ans = value;
+      this.screen.write(tiStr(value), null, 0, this.alignsRight(value));
+    }
+    return pc + 1;
+  };
+
+  Machine.prototype.openerOf = function (pc, statements) {
+    var depth = 0;
+    for (var i = pc - 1; i >= 0; i--) {
+      var head = statements[i][0].text;
+      if (head === "End") depth++;
+      else if (OPENERS[head]) {
+        if (depth === 0) return i;
+        depth--;
+      }
+    }
+    throw new TIError("SYNTAX", "Else with no If");
+  };
+
+  Machine.prototype.menuOptions = function (rest) {
+    var parser = new Parser(rest, this);
+    parser.expr();                       // the title
+    var options = [];
+    while (parser.accept(",") !== null) {
+      var text = parser.expr();
+      parser.accept(",");
+      var label = "";
+      // Stop at ")" as well as ",": the last option is followed by the
+      // closing paren, and without this only the LAST entry is broken.
+      while (!parser.atEnd() && parser.name() !== "," && parser.name() !== ")") {
+        label += parser.take().text;
+      }
+      options.push({ text: String(text), label: label.trim() });
+    }
+    return options;
+  };
+
+  /* ---- driver used by the tests ----------------------------------- */
+
+  function runToCompletion(source, table, inputs, options) {
+    options = options || {};
+    var scanner = new Scanner(table);
+    var screen = new Screen(options.cols, options.rows);
+    var machine = new Machine(scanner, screen);
+    var queue = (inputs || []).slice();
+    var iterator = machine.run(source, {});
+    var result = iterator.next(), error = null;
+
+    try {
+      while (!result.done) {
+        var request = result.value;
+        if (request.type === "input") result = iterator.next(queue.shift());
+        else if (request.type === "menu") result = iterator.next(parseInt(queue.shift(), 10) - 1);
+        else result = iterator.next();
+      }
+    } catch (err) {
+      error = err;
+    }
+    return { screen: screen, machine: machine, error: error };
+  }
+
+  var api = {
+    Scanner: Scanner, Screen: Screen, Machine: Machine, Parser: Parser,
+    TIError: TIError, Unsupported: Unsupported, Frac: Frac,
+    preprocess: preprocess, splitStatements: splitStatements,
+    tiStr: tiStr, toFrac: toFrac, runToCompletion: runToCompletion,
+    COLS: COLS, ROWS: ROWS, NARROW_COLS: NARROW_COLS, NARROW_ROWS: NARROW_ROWS
+  };
+
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.TI84 = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+</script>
+<script>
+(function () {
+  "use strict";
+  var TABLE = JSON.parse(document.getElementById("tokens").textContent);
+  var PROGRAMS = JSON.parse(document.getElementById("programs").textContent);
+
+  var el = function (id) { return document.getElementById(id); };
+  var lcdEl = el("lcd"), rulerEl = el("ruler"), askEl = el("ask");
+  var readoutEl = el("readout"), badgesEl = el("badges"), sourceEl = el("source");
+
+  var narrow = false;
+  var session = null;
+
+  /* ---- program picker ---- */
+  var names = Object.keys(PROGRAMS);
+  var active = names[0];
+  names.forEach(function (name) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = name;
+    b.setAttribute("aria-pressed", String(name === active));
+    b.addEventListener("click", function () {
+      active = name;
+      sourceEl.value = PROGRAMS[name];
+      Array.prototype.forEach.call(el("picker").children, function (c) {
+        c.setAttribute("aria-pressed", String(c.textContent === name));
+      });
+      reset();
+    });
+    el("picker").appendChild(b);
+  });
+  sourceEl.value = PROGRAMS[active];
+
+  /* ---- screen ---- */
+  function blankScreen() {
+    return new TI84.Screen(
+      narrow ? TI84.NARROW_COLS : TI84.COLS,
+      narrow ? TI84.NARROW_ROWS : TI84.ROWS);
+  }
+
+  function paint(screen) {
+    lcdEl.textContent = screen.lines().join("\n");
+    var ruler = "";
+    for (var c = 1; c <= screen.cols; c++) {
+      ruler += (c % 5 === 0) ? String(c % 10) : " ";
+    }
+    rulerEl.textContent = ruler;
+  }
+
+  function badges(screen, state) {
+    badgesEl.innerHTML = "";
+    [screen.cols + "×" + screen.rows,
+     narrow ? "TI-84 Plus" : "TI-84 Plus CE",
+     state].forEach(function (text) {
+      if (!text) return;
+      var s = document.createElement("span");
+      s.className = "badge";
+      s.textContent = text;
+      badgesEl.appendChild(s);
+    });
+  }
+
+  /* ---- readout ---- */
+  function note(kind, title, body) {
+    var d = document.createElement("div");
+    d.className = "note " + kind;
+    var t = document.createElement("span");
+    t.className = "t";
+    t.textContent = title;
+    d.appendChild(t);
+    if (body) d.appendChild(document.createTextNode(body));
+    return d;
+  }
+
+  function stat(key, value) {
+    var w = document.createElement("div");
+    w.className = "stat";
+    var k = document.createElement("span");
+    k.className = "k"; k.textContent = key;
+    var v = document.createElement("span");
+    v.className = "v"; v.textContent = value;
+    w.appendChild(k); w.appendChild(v);
+    return w;
+  }
+
+  function renderReadout(s) {
+    readoutEl.innerHTML = "";
+    if (!s) return;
+
+    var row = document.createElement("div");
+    row.className = "stat-row";
+    row.appendChild(stat("statements", s.machine.steps));
+    row.appendChild(stat("bytes on device", s.bytes === null ? "—" : s.bytes));
+    if (s.current) row.appendChild(stat("line", s.current.line));
+    readoutEl.appendChild(row);
+
+    if (s.current) {
+      readoutEl.appendChild(note("", "Next statement", s.current.source));
+    }
+
+    if (s.error) {
+      var isLimit = s.error.name === "Unsupported";
+      readoutEl.appendChild(note(
+        isLimit ? "warn" : "err",
+        isLimit ? "Simulator limit" : s.error.message,
+        isLimit
+          ? s.error.message + " — not a bug in your program. This runner covers a subset; lists, matrices and the graph screen are not in it."
+          : "The handheld would stop here and offer Goto."));
+    } else if (s.done) {
+      readoutEl.appendChild(note("ok", "Finished", s.machine.steps + " statements executed."));
+    }
+
+    if (s.screen.truncated.length) {
+      var d = note("warn",
+        s.screen.truncated.length + " line(s) cut off at " + s.screen.cols + " columns", "");
+      s.screen.truncated.forEach(function (text) {
+        var p = document.createElement("div");
+        p.style.marginTop = "4px";
+        var c = document.createElement("code");
+        c.textContent = text;
+        p.appendChild(c);
+        d.appendChild(p);
+      });
+      readoutEl.appendChild(d);
+    }
+
+    var keys = Object.keys(s.machine.vars).sort();
+    if (keys.length) {
+      var grid = document.createElement("div");
+      grid.className = "vars";
+      keys.forEach(function (k) {
+        var cell = document.createElement("div");
+        cell.className = "var";
+        var b = document.createElement("b"); b.textContent = k;
+        var v = document.createElement("span"); v.textContent = TI84.tiStr(s.machine.vars[k]);
+        cell.appendChild(b); cell.appendChild(v);
+        grid.appendChild(cell);
+      });
+      readoutEl.appendChild(grid);
+    }
+  }
+
+  /* ---- byte cost, the number that actually matters on the device ---- */
+  function byteCost(source) {
+    try {
+      var scanner = new TI84.Scanner(TABLE);
+      var pre = TI84.preprocess(source, scanner);
+      var tokens = scanner.scan(pre.text);
+      var total = 0;
+      for (var i = 0; i < tokens.length; i++) {
+        var t = tokens[i];
+        if (t.kind === "str") {
+          // Each character inside a string is its own token, and the
+          // lowercase ones are two bytes apiece.
+          var body = t.text.replace(/"/g, "");
+          total += 1;                       // the opening quote
+          for (var c = 0; c < body.length; c++) {
+            total += (scanner.bits(body[c]).length / 2) || 1;
+          }
+          if (t.text.slice(-1) === '"' && t.text.length > 1) total += 1;
+        } else {
+          total += (scanner.bits(t.text).length / 2) || 1;
+        }
+      }
+      return total;
+    } catch (err) { return null; }
+  }
+
+  /* ---- driving the generator ---- */
+  function newSession(stepping) {
+    var scanner = new TI84.Scanner(TABLE);
+    var screen = blankScreen();
+    var machine = new TI84.Machine(scanner, screen);
+    return {
+      screen: screen, machine: machine, stepping: stepping,
+      iterator: machine.run(sourceEl.value, { step: stepping }),
+      done: false, error: null, current: null,
+      bytes: byteCost(sourceEl.value)
+    };
+  }
+
+  function advance(sendValue) {
+    if (!session || session.done) return;
+    var result;
+    try {
+      result = session.iterator.next(sendValue);
+    } catch (err) {
+      session.error = err;
+      session.done = true;
+      finish();
+      return;
+    }
+    if (result.done) {
+      session.done = true;
+      session.current = null;
+      finish();
+      return;
+    }
+    var request = result.value;
+    if (request.type === "step") {
+      session.current = request;
+      render("stepping");
+      return;                       // wait for the next Step click
+    }
+    if (request.type === "input") { askInput(request); return; }
+    if (request.type === "menu") { askMenu(request); return; }
+    if (request.type === "pause") { askPause(); return; }
+    advance();                      // nothing to ask; keep going
+  }
+
+  function runToEnd() {
+    session = newSession(false);
+    clearAsk();
+    advance();
+  }
+
+  function finish() {
+    clearAsk();
+    render(session.error ? "stopped" : "done");
+  }
+
+  function render(state) {
+    paint(session ? session.screen : blankScreen());
+    badges(session ? session.screen : blankScreen(), state);
+    renderReadout(session);
+  }
+
+  function clearAsk() { askEl.className = "ask"; askEl.innerHTML = ""; }
+
+  function askInput(request) {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "waiting for input");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+
+    var label = document.createElement("label");
+    label.textContent = request.prompt;
+    label.setAttribute("for", "ask-input");
+    var row = document.createElement("div");
+    row.className = "row";
+    var input = document.createElement("input");
+    input.id = "ask-input";
+    input.type = "text";
+    input.inputMode = "decimal";
+    input.autocomplete = "off";
+    var send = document.createElement("button");
+    send.className = "btn primary";
+    send.type = "button";
+    send.textContent = "Enter";
+
+    function submit() {
+      var value = input.value.trim();
+      if (!value) { input.focus(); return; }
+      clearAsk();
+      advance(value);
+    }
+    send.addEventListener("click", submit);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+    });
+
+    row.appendChild(input); row.appendChild(send);
+    askEl.appendChild(label); askEl.appendChild(row);
+    input.focus();
+  }
+
+  function askMenu(request) {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "menu");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+
+    var label = document.createElement("label");
+    label.textContent = "Choose";
+    var list = document.createElement("div");
+    list.className = "menu-opts";
+    request.options.forEach(function (text, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      var n = document.createElement("b");
+      n.textContent = (i + 1) + ":";
+      b.appendChild(n);
+      b.appendChild(document.createTextNode(text));
+      b.addEventListener("click", function () { clearAsk(); advance(i); });
+      list.appendChild(b);
+    });
+    askEl.appendChild(label);
+    askEl.appendChild(list);
+    list.querySelector("button").focus();
+  }
+
+  function askPause() {
+    paint(session.screen);
+    renderReadout(session);
+    badges(session.screen, "paused");
+    askEl.className = "ask on";
+    askEl.innerHTML = "";
+    var label = document.createElement("label");
+    label.textContent = "Paused";
+    var b = document.createElement("button");
+    b.className = "btn primary";
+    b.type = "button";
+    b.textContent = "Continue";
+    b.addEventListener("click", function () { clearAsk(); advance(); });
+    askEl.appendChild(label);
+    askEl.appendChild(b);
+    b.focus();
+  }
+
+  function reset() {
+    session = null;
+    clearAsk();
+    paint(blankScreen());
+    badges(blankScreen(), "ready");
+    readoutEl.innerHTML = "";
+    var bytes = byteCost(sourceEl.value);
+    readoutEl.appendChild(note("", "Not running",
+      bytes === null
+        ? "Press Run."
+        : bytes + " bytes on the handheld. Press Run."));
+  }
+
+  /* ---- wiring ---- */
+  el("run").addEventListener("click", runToEnd);
+  el("step").addEventListener("click", function () {
+    if (!session || session.done) session = newSession(true);
+    else if (!session.stepping) session = newSession(true);
+    advance();
+  });
+  el("reset").addEventListener("click", reset);
+  el("screen-toggle").addEventListener("click", function () {
+    narrow = !narrow;
+    this.setAttribute("aria-pressed", String(narrow));
+    this.textContent = narrow ? "CE / 26×10" : "83+ / 16×8";
+    reset();
+  });
+  sourceEl.addEventListener("input", function () {
+    if (!session || session.done) reset();
+  });
+
+  reset();
+})();
+</script>

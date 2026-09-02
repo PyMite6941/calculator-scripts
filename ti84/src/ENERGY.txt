@@ -1,0 +1,4 @@
+Lbl 0
+Menu("MAIN MENU","ENTER VARS",1,"SOLVE EQUATIONS",2,"QUIT",3)
+
+Lbl 1

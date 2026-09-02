@@ -1,0 +1,47 @@
+// TRIANGLE -- solve a triangle from SSS or SAS
+//
+// This one exists to show the shape of a menu-driven program, which is
+// how most useful TI-BASIC tools are built.
+//
+// Menu( jumps straight to a label -- there is no Goto involved, and no
+// "return" either. Every branch must end in Stop or the program falls
+// through into whatever code physically follows it. That fall-through
+// is the single most common bug in menu programs.
+//
+// Note also that the angle mode is the user's, not yours: cos( means
+// degrees or radians depending on a setting you cannot see. Degree
+// works around it by forcing degrees for one expression.
+
+ClrHome
+Menu("TRIANGLE","SSS - THREE SIDES",S,"SAS - TWO AND ANGLE",T,"QUIT",Q)
+
+// ---- three sides known ----
+Lbl S
+Disp "SIDES A,B,C"
+Prompt A,B,C
+If A+B<=C or A+C<=B or B+C<=A
+Then
+  Disp "NOT A TRIANGLE"
+  Stop
+End
+(A+B+C)/2->P
+sqrt(P(P-A)(P-B)(P-C))->E
+cos^-1((B^2+C^2-A^2)/(2B*C))->F
+Disp "AREA",E
+Disp "ANGLE A",F
+Stop
+
+// ---- two sides and the angle between them ----
+Lbl T
+Disp "SIDES A,B"
+Prompt A,B
+Disp "ANGLE C BETWEEN"
+Prompt C
+sqrt(A^2+B^2-2A*B*cos(C))->G
+.5A*B*sin(C)->E
+Disp "SIDE C",G
+Disp "AREA",E
+Stop
+
+Lbl Q
+ClrHome

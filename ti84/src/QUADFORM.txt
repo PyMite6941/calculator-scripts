@@ -1,0 +1,145 @@
+// QUADFORM -- solve A*X^2 + B*X + C = 0, and analyse the parabola
+//
+// Read this file alongside docs/02-ti84-basic.md. Three things here are
+// not TI-BASIC and exist only because you are editing on a PC:
+//
+//   * lines starting with // are stripped before tokenizing
+//   * indentation is stripped too (a leading space is a real token on
+//     the handheld and would cost a real byte)
+//   * sqrt() is an ASCII stand-in for the square-root symbol
+//
+// COMMENTS ARE FREE. This header is 647 characters and costs the
+// calculator exactly 0 bytes -- measured, not assumed. Never delete a
+// comment to save space; delete a parenthesis instead.
+//
+// One thing here IS TI-BASIC and catches everyone once: ~ is negation,
+// the (-) key. A plain - is subtraction, always. Writing -B would encode
+// as "subtract B from nothing" and raise ERR:SYNTAX on the calculator.
+//
+// BYTE NOTES, since this has to stay small:
+//   2A     implicit multiplication, 1 byte cheaper than 2*A
+//   ^^2    the single-byte squared token, vs ^2 which is two
+//   "TEXT  a closing quote is optional at end of line, 1 byte each
+//   ()     every paren is a real byte -- only write the ones that change
+//          the answer
+
+// WHY: a TI-BASIC program inherits whatever the last program left in
+// A-Z. Without this, the first run reads someone else's O and M.
+1->O
+0->M
+
+Lbl 0
+Disp "MODE:",O,"COMPLEX:",M
+Menu("MAIN MENU","PARABOLA ORIENTATION",1,"TOGGLE COMPLEX MODE",2,"ENTER COEFFICIENTS",3,"CALCULATE",4,"QUIT",5)
+
+Lbl 1
+If O=1
+Then
+  2->O
+Else
+  1->O
+End
+Goto 0
+
+Lbl 2
+1-M->M
+Goto 0
+
+Lbl 3
+ClrHome
+Disp "A,B,C
+Prompt A,B,C
+Goto 0
+
+Lbl 4
+  If A=0
+  Then
+    Disp "NOT QUADRATIC
+    Stop
+  End
+
+  B^^2-4A*C->D
+
+  If D<0
+  Then
+    If M=1
+    Then
+      Disp "COMPLEX ROOTS
+      ~B/(2A)->R
+      sqrt(~D)/(2A)->I
+      Disp "REAL PART",R►Frac
+      Disp "IMAG PART",I►Frac
+    Else
+      Disp "NO REAL ROOTS
+      Stop
+    End
+  End
+
+  (~B+sqrt(D))/(2A)->X
+  (~B-sqrt(D))/(2A)->Y
+  Disp "ROOT 1",X►Frac
+  Disp "ROOT 2",Y►Frac
+
+  ~B/(2A)->H
+  C-B^^2/(4A)->K
+
+  Disp "VERTEX
+  Disp "x=",H
+  Disp "y=",K
+
+  1/(4A)->P
+
+  If O=1
+  Then
+    Disp "DIRECTION
+    If A>0
+    Then
+      Disp "UP
+    End
+    If A<0
+    Then
+      Disp "DOWN
+    End
+
+    Disp "AXIS OF SYMM
+    Disp "x=",H
+
+    Disp "FOCAL DISTANCE",P
+
+    Disp "FOCAL POINT
+    Disp "x=",H
+    Disp "y=",K+P
+
+    Disp "DIRECTRIX
+    Disp "y=",K-P
+
+    Disp "Y-INT",C
+  Else
+    Disp "DIRECTION
+    If A>0
+    Then
+      Disp "RIGHT
+    End
+    If A<0
+    Then
+      Disp "LEFT
+    End
+
+    Disp "AXIS OF SYMM
+    Disp "x=",K
+
+    Disp "FOCAL DISTANCE",P
+
+    Disp "FOCAL POINT
+    Disp "x=",H+P
+    Disp "y=",K
+
+    Disp "DIRECTRIX
+    Disp "x=",H-P
+
+    Disp "X-INT",C
+  End
+Goto 0
+
+Lbl 5
+Stop

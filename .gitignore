@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.mpy
+
+# Build output. Regenerate with `python build.py` -- an artifact checked in
+# here is a promise it matches the source next to it, and that promise goes
+# stale the moment anyone edits without rebuilding.
+ti84/dist/
+nspire/dist/
+
+# Texas Instruments' own documents, taken from TI-Nspire software. They are
+# the only source of the method-13 metadata a .tns needs, and no licence
+# grants the right to redistribute them. See nspire/tool/README.md for how
+# to supply your own.
+nspire/tool/plantilla.tns
+nspire/tool/module_template.tns
