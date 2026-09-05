@@ -69,6 +69,13 @@ def preprocess(text, names=None):
     return "\n".join(out) + "\n", line_map
 
 
+def _nicer(new, current):
+    """Which of two spellings for the same token to show a human."""
+    if new.isascii() != current.isascii():
+        return current.isascii()          # the glyph wins over the ASCII
+    return len(new) < len(current)
+
+
 class Scanner:
     """Longest-match tokenizer over one calculator model's token table."""
 
@@ -77,6 +84,26 @@ class Scanner:
         self.table = model.tokens.names
         self.names = set(self.table)
         self.maxlen = max(len(n) for n in self.names)
+
+        # bits -> the spelling to show a human. Prefer the one with real
+        # glyphs in it (that is TI's own), and among equals the shortest.
+        self._display = {}
+        for name, token in self.table.items():
+            current = self._display.get(token.bits)
+            if current is None or _nicer(name, current):
+                self._display[token.bits] = name
+
+    def display(self, name):
+        """How the handheld draws this token.
+
+        Several names share one token -- `^^2` and `²` are both 0x0D --
+        because the ASCII spellings exist so you can type them on a PC
+        keyboard. The calculator only knows the byte, and draws it as the
+        real glyph. Anything showing a token to a human wants this, not
+        the spelling that happened to be in the source.
+        """
+        token = self.table.get(name)
+        return self._display.get(token.bits, name) if token else name
 
     def bits(self, name):
         """The byte(s) a token name encodes to.

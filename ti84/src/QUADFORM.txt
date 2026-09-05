@@ -8,9 +8,9 @@
 //     the handheld and would cost a real byte)
 //   * sqrt() is an ASCII stand-in for the square-root symbol
 //
-// COMMENTS ARE FREE. This header is 647 characters and costs the
-// calculator exactly 0 bytes -- measured, not assumed. Never delete a
-// comment to save space; delete a parenthesis instead.
+// COMMENTS ARE FREE. This header costs the calculator exactly 0 bytes --
+// measured, not assumed. Never delete a comment to save space; delete a
+// parenthesis instead.
 //
 // One thing here IS TI-BASIC and catches everyone once: ~ is negation,
 // the (-) key. A plain - is subtraction, always. Writing -B would encode
@@ -22,6 +22,16 @@
 //   "TEXT  a closing quote is optional at end of line, 1 byte each
 //   ()     every paren is a real byte -- only write the ones that change
 //          the answer
+//
+// REGISTERS -- TI-BASIC has no locals, so this block is the contract.
+//   A,B,C  coefficients                 set by menu item 3
+//   O      orientation  1: Y=AX^2+BX+C  2: X=AY^2+BY+C
+//   M      complex mode 0: report none  1: show real and imaginary
+//   D      discriminant       P  focal distance
+//   H,K    vertex in "natural" order -- H from ~B/(2A), K from C-B^2/(4A)
+//   U,V    the SAME vertex as displayed (x,y). Turn the parabola
+//          sideways and H becomes the y, not the x. See WHY below.
+//   X,Y    roots              I  imaginary part
 
 // WHY: a TI-BASIC program inherits whatever the last program left in
 // A-Z. Without this, the first run reads someone else's O and M.
@@ -29,117 +39,157 @@
 0->M
 
 Lbl 0
-Disp "MODE:",O,"COMPLEX:",M
 Menu("MAIN MENU","PARABOLA ORIENTATION",1,"TOGGLE COMPLEX MODE",2,"ENTER COEFFICIENTS",3,"CALCULATE",4,"QUIT",5)
 
+// ---- toggle orientation ----
+// 3-O flips 1 to 2 and 2 back to 1 in one statement, the same trick as
+// 1-M below. Cheaper than If/Then/Else/End by about ten bytes.
 Lbl 1
-If O=1
-Then
-  2->O
-Else
-  1->O
-End
+3-O->O
 Goto 0
 
+// ---- toggle complex mode ----
 Lbl 2
 1-M->M
 Goto 0
 
+// ---- enter coefficients ----
 Lbl 3
 ClrHome
-Disp "A,B,C
+// The equation form IS the orientation readout. The old
+// Disp "MODE:",O before the menu was invisible -- Menu( paints over the
+// whole screen, so nothing displayed immediately before it is ever seen.
+If O=1
+Then
+  Disp "Y=AX^^2+BX+C
+Else
+  Disp "X=AY^^2+BY+C
+End
 Prompt A,B,C
 Goto 0
 
+// ---- analyse ----
 Lbl 4
-  If A=0
-  Then
-    Disp "NOT QUADRATIC
-    Stop
-  End
+ClrHome
+
+// WHY If/Then/Else rather than "If A=0 / Disp / Stop": Stop ends the
+// whole program, dropping the user out of a menu they never chose to
+// leave. Jumping out with Goto instead would leak memory on every jump.
+// Closing the block first, then falling through to Goto 0, costs
+// nothing and always returns to the menu.
+If A=0
+Then
+  Disp "NOT QUADRATIC
+  Disp "A CANNOT BE 0
+  Pause
+Else
 
   B^^2-4A*C->D
+  ~B/(2A)->H
+  C-B^^2/(4A)->K
+  1/(4A)->P
 
+  // WHY U,V exist: H is the vertex's x only when the parabola opens up
+  // or down. Turn it sideways and H is the y. Deciding that once, here,
+  // is what keeps every screen below correct -- reading H and K directly
+  // is how the axis, focus and directrix all came out transposed.
+  If O=1
+  Then
+    H->U
+    K->V
+  Else
+    K->U
+    H->V
+  End
+
+  // ---- page 1: roots ----
+  // WHY nested inside Else: with D<0 the real-root formula takes the
+  // square root of a negative and dies with ERR:NONREAL ANS. Displaying
+  // the complex roots and then falling through into it was exactly that
+  // crash -- the End closes the If, it does not stop the program.
+  Disp "DISCRIMINANT",D
   If D<0
   Then
     If M=1
     Then
       Disp "COMPLEX ROOTS
-      ~B/(2A)->R
       sqrt(~D)/(2A)->I
-      Disp "REAL PART",R►Frac
-      Disp "IMAG PART",I►Frac
+      Disp "RE",H►Frac
+      Disp "IM",I►Frac
     Else
       Disp "NO REAL ROOTS
-      Stop
     End
+  Else
+    (~B+sqrt(D))/(2A)->X
+    (~B-sqrt(D))/(2A)->Y
+    Disp "ROOT 1",X►Frac
+    Disp "ROOT 2",Y►Frac
   End
+  Pause
 
-  (~B+sqrt(D))/(2A)->X
-  (~B-sqrt(D))/(2A)->Y
-  Disp "ROOT 1",X►Frac
-  Disp "ROOT 2",Y►Frac
-
-  ~B/(2A)->H
-  C-B^^2/(4A)->K
-
+  // ---- page 2: vertex and direction ----
+  // WHY paged at all: this analysis is about thirty lines and the home
+  // screen holds ten. Without the breaks everything above the last ten
+  // lines scrolls away before the user can read it.
+  ClrHome
   Disp "VERTEX
-  Disp "x=",H
-  Disp "y=",K
-
-  1/(4A)->P
-
+  Disp "x=",U
+  Disp "y=",V
+  Disp "DIRECTION
   If O=1
   Then
-    Disp "DIRECTION
     If A>0
     Then
       Disp "UP
-    End
-    If A<0
-    Then
+    Else
       Disp "DOWN
     End
-
-    Disp "AXIS OF SYMM
-    Disp "x=",H
-
-    Disp "FOCAL DISTANCE",P
-
-    Disp "FOCAL POINT
-    Disp "x=",H
-    Disp "y=",K+P
-
-    Disp "DIRECTRIX
-    Disp "y=",K-P
-
-    Disp "Y-INT",C
   Else
-    Disp "DIRECTION
     If A>0
     Then
       Disp "RIGHT
-    End
-    If A<0
-    Then
+    Else
       Disp "LEFT
     End
+  End
+  Pause
 
-    Disp "AXIS OF SYMM
-    Disp "x=",K
+  // ---- page 3: axis and focus ----
+  ClrHome
+  Disp "AXIS OF SYMM
+  If O=1
+  Then
+    Disp "x=",U
+  Else
+    Disp "y=",V
+  End
+  Disp "FOCAL DISTANCE",P
+  Disp "FOCUS
+  If O=1
+  Then
+    Disp "x=",U
+    Disp "y=",V+P
+  Else
+    Disp "x=",U+P
+    Disp "y=",V
+  End
+  Pause
 
-    Disp "FOCAL DISTANCE",P
-
-    Disp "FOCAL POINT
-    Disp "x=",H+P
-    Disp "y=",K
-
-    Disp "DIRECTRIX
-    Disp "x=",H-P
-
+  // ---- page 4: directrix and intercept ----
+  ClrHome
+  Disp "DIRECTRIX
+  If O=1
+  Then
+    Disp "y=",V-P
+    Disp "Y-INT",C
+  Else
+    Disp "x=",U-P
     Disp "X-INT",C
   End
+  Pause
+End
 Goto 0
 
 Lbl 5
+ClrHome
 Stop

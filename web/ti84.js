@@ -67,6 +67,10 @@
     return new Frac((sign * best[0]) + "/" + best[1]);
   }
 
+  function canonical(body, scanner) {
+    return scanner.scan(body).map(function (t) { return scanner.display(t.text); }).join("");
+  }
+
   /* ---- number formatting ----------------------------------------- */
 
   function tiStr(value) {
@@ -139,13 +143,32 @@
 
   /* ---- scanner ---------------------------------------------------- */
 
+  function isAscii(text) { return !/[^\x00-\x7F]/.test(text); }
+
+  function nicer(a, b) {
+    if (isAscii(a) !== isAscii(b)) return isAscii(b);   // glyph beats ASCII
+    return a.length < b.length;
+  }
+
   function Scanner(table) {
     this.table = table;
     this.maxlen = 0;
+    // bits -> the spelling to show a human. `^^2` and `²` are both 0x0D;
+    // the ASCII one exists so you can type it, the calculator draws the
+    // glyph. Anything shown to a person wants the glyph.
+    this.display_ = {};
     for (var name in table) {
       if (name.length > this.maxlen) this.maxlen = name.length;
+      var bits = table[name];
+      var current = this.display_[bits];
+      if (current === undefined || nicer(name, current)) this.display_[bits] = name;
     }
   }
+  Scanner.prototype.display = function (name) {
+    if (!this.has(name)) return name;
+    var chosen = this.display_[this.table[name]];
+    return chosen === undefined ? name : chosen;
+  };
   Scanner.prototype.has = function (name) {
     return Object.prototype.hasOwnProperty.call(this.table, name);
   };
@@ -377,7 +400,14 @@
     if (!t) throw new TIError("SYNTAX", "expression ended early");
     var text = t.text;
 
-    if (t.kind === "str") { this.take(); return text.replace(/"/g, ""); }
+    if (t.kind === "str") {
+      this.take();
+      // A TI string is tokens, not characters, so the ASCII stand-ins
+      // resolve inside a literal too: `^^2` really is the squared token
+      // and the handheld draws a superscript 2. Print the raw source and
+      // you would believe your title says Y=AX^^2+BX+C.
+      return canonical(text.replace(/"/g, ""), this.machine.scanner);
+    }
     if (text === "(") {
       this.take();
       var value = this.expr();

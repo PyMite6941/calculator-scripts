@@ -85,6 +85,21 @@ def to_frac(value):
 # number formatting -- TI's, not Python's
 # ----------------------------------------------------------------------
 
+def canonical(body, scanner):
+    """The text of a string as the CALCULATOR will show it.
+
+    A TI string is not characters, it is tokens -- the same tokens as the
+    code around it. So the ASCII stand-ins this project uses in source
+    resolve inside string literals too: `^^2` really is the one-byte
+    squared token, and the handheld draws it as a superscript 2.
+
+    Without this the simulator prints the raw source and you would sit
+    there believing your title bar says Y=AX^^2+BX+C when the device
+    quite correctly shows Y=AX²+BX+C.
+    """
+    return "".join(scanner.display(t[1]) for t in scanner.scan(body))
+
+
 def ti_str(value):
     """Format a number the way the home screen shows it.
 
@@ -397,7 +412,7 @@ class Parser:
 
         if kind == "str":
             self.take()
-            return text.strip('"')
+            return canonical(text.strip('"'), self.machine.scanner)
 
         if text == "(":
             self.take()
